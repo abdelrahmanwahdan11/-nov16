@@ -14,6 +14,7 @@ import '../food_details/food_details_screen.dart';
 import '../rewards/rewards_screen.dart';
 import '../meal_planner/meal_planner_screen.dart';
 import '../community/community_screen.dart';
+import '../notifications/notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.state});
@@ -135,6 +136,49 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   const SizedBox(height: 8),
+                  ValueListenableBuilder<List<AppNotification>>(
+                    valueListenable: widget.state.notificationsNotifier.notifications,
+                    builder: (context, notifications, _) {
+                      final notifier = widget.state.notificationsNotifier;
+                      if (notifier.isLoading.value && notifications.isEmpty) {
+                        return Column(
+                          children: const [
+                            SkeletonLoader(height: 110, borderRadius: 24),
+                            SizedBox(height: 16),
+                          ],
+                        );
+                      }
+                      if (notifications.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      final latest = notifications.take(2).toList();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(
+                            title: loc.translate('updates_for_you'),
+                            actionLabel: loc.translate('view_all'),
+                            onActionTap: () => Navigator.of(context).pushNamed(NotificationsScreen.route),
+                          ),
+                          const SizedBox(height: 12),
+                          ...latest.map(
+                            (item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _NotificationPreviewCard(
+                                notification: item,
+                                onTap: () {
+                                  widget.state.notificationsNotifier.markAsRead(item.id);
+                                  Navigator.of(context).pushNamed(NotificationsScreen.route);
+                                },
+                                loc: loc,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    },
+                  ),
                   AnimatedBuilder(
                     animation: Listenable.merge([
                       widget.state.mealPlannerNotifier,
@@ -310,6 +354,143 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         ],
       ),
+    );
+  }
+}
+
+class _NotificationPreviewCard extends StatelessWidget {
+  const _NotificationPreviewCard({required this.notification, required this.onTap, required this.loc});
+
+  final AppNotification notification;
+  final VoidCallback onTap;
+  final AppLocalizations loc;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isUnread = !notification.isRead;
+    final background = isUnread
+        ? theme.colorScheme.primary.withOpacity(theme.brightness == Brightness.dark ? 0.22 : 0.12)
+        : theme.colorScheme.surfaceVariant.withOpacity(theme.brightness == Brightness.dark ? 0.25 : 0.18);
+    final typeColor = _typeColor(theme, notification.typeKey);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          if (isUnread)
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(0.18),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                _NotificationThumbnail(notification: notification, accent: typeColor),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        loc.translate(notification.typeKey).toUpperCase(),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          letterSpacing: 0.6,
+                          color: typeColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        loc.translate(notification.titleKey),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        loc.translate(notification.bodyKey),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(height: 1.3),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      loc.translate(notification.timeKey),
+                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                    ),
+                    const SizedBox(height: 20),
+                    Icon(IconlyLight.arrow_right_2, size: 20, color: theme.colorScheme.primary),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _typeColor(ThemeData theme, String typeKey) {
+    switch (typeKey) {
+      case 'notification_type_order':
+        return theme.colorScheme.primary;
+      case 'notification_type_event':
+        return Colors.tealAccent.shade400;
+      case 'notification_type_tip':
+        return Colors.amber.shade600;
+      case 'notification_type_offer':
+      default:
+        return Colors.pinkAccent;
+    }
+  }
+}
+
+class _NotificationThumbnail extends StatelessWidget {
+  const _NotificationThumbnail({required this.notification, required this.accent});
+
+  final AppNotification notification;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = 68.0;
+    if (notification.imageUrl != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Image.network(
+          notification.imageUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: accent.withOpacity(0.2),
+      ),
+      child: Icon(IconlyBold.bag, color: accent),
     );
   }
 }

@@ -118,6 +118,38 @@ class ChefStory {
   final int durationMinutes;
 }
 
+class AppNotification {
+  const AppNotification({
+    required this.id,
+    required this.titleKey,
+    required this.bodyKey,
+    required this.timeKey,
+    required this.typeKey,
+    this.imageUrl,
+    this.isRead = false,
+  });
+
+  final String id;
+  final String titleKey;
+  final String bodyKey;
+  final String timeKey;
+  final String typeKey;
+  final String? imageUrl;
+  final bool isRead;
+
+  AppNotification copyWith({bool? isRead}) {
+    return AppNotification(
+      id: id,
+      titleKey: titleKey,
+      bodyKey: bodyKey,
+      timeKey: timeKey,
+      typeKey: typeKey,
+      imageUrl: imageUrl,
+      isRead: isRead ?? this.isRead,
+    );
+  }
+}
+
 class Restaurant {
   const Restaurant({
     required this.id,
@@ -300,6 +332,7 @@ class UserProfile {
 class MockDataService {
   static const int popularPageSize = 6;
   static const int catalogPageSize = 8;
+  static const int notificationsPageSize = 4;
 
   final List<Category> mockCategories = [
     const Category(
@@ -373,6 +406,16 @@ class MockDataService {
     return _communityStories;
   }
 
+  Future<List<AppNotification>> fetchNotifications({int page = 0, int pageSize = notificationsPageSize}) async {
+    await Future.delayed(const Duration(milliseconds: 360));
+    final start = page * pageSize;
+    if (start >= _notifications.length) {
+      return [];
+    }
+    final end = min(start + pageSize, _notifications.length);
+    return _notifications.sublist(start, end);
+  }
+
   List<FoodItem> get allFoodItems => _foodItems;
 
   List<Order> get mockOrders => List.generate(
@@ -423,6 +466,54 @@ final List<FoodItem> _baseFoodItems = List.generate(
     ingredients: const ['Cheese', 'Tomato', 'Basil', 'Herbs'],
   ),
 );
+
+final List<AppNotification> _notifications = [
+  const AppNotification(
+    id: 'notif_1',
+    titleKey: 'notification_title_order_ready',
+    bodyKey: 'notification_body_order_ready',
+    timeKey: 'notification_time_5m',
+    typeKey: 'notification_type_order',
+    imageUrl:
+        'https://images.unsplash.com/photo-1528712306091-ed0763094c98?auto=format&fit=crop&w=400&q=80',
+  ),
+  const AppNotification(
+    id: 'notif_2',
+    titleKey: 'notification_title_offer_weekend',
+    bodyKey: 'notification_body_offer_weekend',
+    timeKey: 'notification_time_1h',
+    typeKey: 'notification_type_offer',
+    imageUrl:
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
+  ),
+  const AppNotification(
+    id: 'notif_3',
+    titleKey: 'notification_title_event_live',
+    bodyKey: 'notification_body_event_live',
+    timeKey: 'notification_time_15m',
+    typeKey: 'notification_type_event',
+    imageUrl:
+        'https://images.unsplash.com/photo-1522906456132-bac22adad34f?auto=format&fit=crop&w=400&q=80',
+  ),
+  const AppNotification(
+    id: 'notif_4',
+    titleKey: 'notification_title_meal_plan',
+    bodyKey: 'notification_body_meal_plan',
+    timeKey: 'notification_time_yesterday',
+    typeKey: 'notification_type_tip',
+    imageUrl:
+        'https://images.unsplash.com/photo-1493770348161-369560ae357d?auto=format&fit=crop&w=400&q=80',
+  ),
+  const AppNotification(
+    id: 'notif_5',
+    titleKey: 'notification_title_loyalty',
+    bodyKey: 'notification_body_loyalty',
+    timeKey: 'notification_time_just_now',
+    typeKey: 'notification_type_offer',
+    imageUrl:
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
+  ),
+];
 
 final List<UserAddress> _profileAddresses = [
   const UserAddress(

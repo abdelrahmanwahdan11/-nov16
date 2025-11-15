@@ -19,6 +19,7 @@ import '../search/search_screen.dart';
 import '../settings/settings_screen.dart';
 import '../meal_planner/meal_planner_screen.dart';
 import '../community/community_screen.dart';
+import '../notifications/notifications_screen.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key, required this.state});
@@ -80,6 +81,49 @@ class _ShellScreenState extends State<ShellScreen> with SingleTickerProviderStat
                 ),
                 title: Text(loc.translate('app_title')),
                 actions: [
+                  ValueListenableBuilder<int>(
+                    valueListenable: widget.state.notificationsNotifier.unreadCount,
+                    builder: (context, unread, _) {
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          IconButton(
+                            icon: const Icon(IconlyLight.notification),
+                            onPressed: () => Navigator.of(context).pushNamed(NotificationsScreen.route),
+                          ),
+                          if (unread > 0)
+                            Positioned(
+                              right: 8,
+                              top: 8,
+                              child: AnimatedScale(
+                                duration: const Duration(milliseconds: 200),
+                                scale: unread > 0 ? 1 : 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    unread > 9 ? '9+' : '$unread',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                   IconButton(
                     icon: const Icon(IconlyLight.search),
                     onPressed: () => Navigator.of(context).pushNamed(SearchScreen.route),
@@ -324,6 +368,7 @@ class _AppDrawer extends StatelessWidget {
                   _DrawerTile(label: loc.translate('orders'), icon: IconlyLight.document, onTap: () => Navigator.of(context).pushNamed(OrdersScreen.route)),
                   _DrawerTile(label: loc.translate('favorites'), icon: IconlyBold.heart, onTap: () => Navigator.of(context).pushNamed(FavoritesScreen.route)),
                   _DrawerTile(label: loc.translate('chat'), icon: IconlyLight.message, onTap: () => Navigator.of(context).pushNamed(ChatScreen.route)),
+                  _DrawerTile(label: loc.translate('notifications'), icon: IconlyLight.notification, onTap: () => Navigator.of(context).pushNamed(NotificationsScreen.route)),
                   _DrawerTile(label: loc.translate('profile'), icon: IconlyLight.profile, onTap: () => Navigator.of(context).pushNamed(ProfileScreen.route)),
                   _DrawerTile(label: loc.translate('settings'), icon: IconlyLight.setting, onTap: () => Navigator.of(context).pushNamed(SettingsScreen.route)),
                   _DrawerTile(label: loc.translate('help_center'), icon: IconlyLight.info_square, onTap: () => Navigator.of(context).pushNamed(HelpCenterScreen.route)),

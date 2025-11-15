@@ -22,6 +22,7 @@ class AppState extends ChangeNotifier {
     profileNotifier = ProfileNotifier(mock);
     mealPlannerNotifier = MealPlannerNotifier(mock);
     communityNotifier = CommunityNotifier(mock);
+    notificationsNotifier = NotificationsNotifier(mock);
   }
 
   late final MockDataService mockDataService;
@@ -37,6 +38,7 @@ class AppState extends ChangeNotifier {
   late final ProfileNotifier profileNotifier;
   late final MealPlannerNotifier mealPlannerNotifier;
   late final CommunityNotifier communityNotifier;
+  late final NotificationsNotifier notificationsNotifier;
 
   final SharedPrefsService prefs = SharedPrefsService();
 
@@ -50,6 +52,7 @@ class AppState extends ChangeNotifier {
     unawaited(profileNotifier.loadProfile());
     unawaited(mealPlannerNotifier.loadPlan());
     unawaited(communityNotifier.loadInitial());
+    unawaited(notificationsNotifier.loadInitial());
   }
 
   @override
@@ -66,6 +69,7 @@ class AppState extends ChangeNotifier {
     profileNotifier.dispose();
     mealPlannerNotifier.dispose();
     communityNotifier.dispose();
+    notificationsNotifier.dispose();
     super.dispose();
   }
 }
@@ -550,6 +554,104 @@ class MealPlannerNotifier extends ChangeNotifier {
     activeDayIndex.value = 0;
     preparedMeals.value = <String>{};
     notifyListeners();
+  }
+}
+
+class NotificationsNotifier extends ChangeNotifier {
+  NotificationsNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  final ValueNotifier<List<AppNotification>> notifications = ValueNotifier([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
+  final ValueNotifier<int> unreadCount = ValueNotifier(0);
+
+  bool _initialized = false;
+  bool _hasMore = true;
+  int _page = 0;
+  final Set<String> _readIds = <String>{};
+
+  bool get initialized => _initialized;
+  bool get hasMore => _hasMore;
+
+  Future<void> loadInitial({bool force = false}) async {
+    if (isLoading.value) return;
+    if (_initialized && !force) return;
+    isLoading.value = true;
+    _hasMore = true;
+    _page = 0;
+    notifications.value = [];
+    notifyListeners();
+    final fetched = await _dataService.fetchNotifications(page: 0);
+    final mapped = _mapReadState(fetched);
+    notifications.value = mapped;
+    _hasMore = fetched.length == MockDataService.notificationsPageSize;
+    _page = _hasMore ? 1 : 0;
+    isLoading.value = false;
+    _initialized = true;
+    _updateUnread();
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadInitial(force: true);
+
+  Future<void> loadMore() async {
+    if (!_hasMore || loadingMore.value) return;
+    loadingMore.value = true;
+    notifyListeners();
+    final fetched = await _dataService.fetchNotifications(page: _page);
+    if (fetched.isEmpty) {
+      _hasMore = false;
+    } else {
+      final mapped = _mapReadState(fetched);
+      notifications.value = [...notifications.value, ...mapped];
+      _page += 1;
+      if (fetched.length < MockDataService.notificationsPageSize) {
+        _hasMore = false;
+      }
+    }
+    loadingMore.value = false;
+    _updateUnread();
+    notifyListeners();
+  }
+
+  void markAsRead(String id) {
+    if (_readIds.contains(id)) return;
+    _readIds.add(id);
+    notifications.value = notifications.value
+        .map((notification) => notification.id == id ? notification.copyWith(isRead: true) : notification)
+        .toList();
+    _updateUnread();
+    notifyListeners();
+  }
+
+  void markAllAsRead() {
+    if (notifications.value.isEmpty) return;
+    _readIds.addAll(notifications.value.map((e) => e.id));
+    notifications.value = notifications.value.map((e) => e.copyWith(isRead: true)).toList();
+    _updateUnread();
+    notifyListeners();
+  }
+
+  List<AppNotification> _mapReadState(List<AppNotification> items) {
+    return items
+        .map((item) => _readIds.contains(item.id) ? item.copyWith(isRead: true) : item)
+        .toList();
+  }
+
+  void _updateUnread() {
+    final count = notifications.value.where((element) => !element.isRead).length;
+    unreadCount.value = count;
+  }
+
+  @override
+  void dispose() {
+    notifications.dispose();
+    isLoading.dispose();
+    loadingMore.dispose();
+    unreadCount.dispose();
+    super.dispose();
   }
 }
 
