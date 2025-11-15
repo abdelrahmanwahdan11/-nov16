@@ -24,6 +24,7 @@ class AppState extends ChangeNotifier {
     communityNotifier = CommunityNotifier(mock);
     notificationsNotifier = NotificationsNotifier(mock);
     reservationsNotifier = ReservationsNotifier(mock);
+    giftCardsNotifier = GiftCardsNotifier(mock);
   }
 
   late final MockDataService mockDataService;
@@ -41,6 +42,7 @@ class AppState extends ChangeNotifier {
   late final CommunityNotifier communityNotifier;
   late final NotificationsNotifier notificationsNotifier;
   late final ReservationsNotifier reservationsNotifier;
+  late final GiftCardsNotifier giftCardsNotifier;
 
   final SharedPrefsService prefs = SharedPrefsService();
 
@@ -56,6 +58,7 @@ class AppState extends ChangeNotifier {
     unawaited(communityNotifier.loadInitial());
     unawaited(notificationsNotifier.loadInitial());
     unawaited(reservationsNotifier.loadInitial());
+    unawaited(giftCardsNotifier.loadInitial());
   }
 
   @override
@@ -74,6 +77,7 @@ class AppState extends ChangeNotifier {
     communityNotifier.dispose();
     notificationsNotifier.dispose();
     reservationsNotifier.dispose();
+    giftCardsNotifier.dispose();
     super.dispose();
   }
 }
@@ -828,6 +832,117 @@ class CommunityNotifier extends ChangeNotifier {
     stories.dispose();
     isLoading.dispose();
     loadingMore.dispose();
+    super.dispose();
+  }
+}
+
+class GiftCardsNotifier extends ChangeNotifier {
+  GiftCardsNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  final ValueNotifier<List<GiftCard>> cards = ValueNotifier([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
+  final ValueNotifier<String?> selectedOccasion = ValueNotifier(null);
+  final ValueNotifier<Set<String>> selectedPerks = ValueNotifier(<String>{});
+
+  List<GiftCard> _all = [];
+  List<GiftCard> _filtered = [];
+  int _page = 0;
+  bool _hasMore = true;
+  bool _initialized = false;
+
+  bool get hasMore => _hasMore;
+
+  Future<void> loadInitial({bool force = false}) async {
+    if (isLoading.value) return;
+    if (_initialized && !force) return;
+    isLoading.value = true;
+    _hasMore = true;
+    _page = 0;
+    cards.value = [];
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 420));
+    _all = List<GiftCard>.from(_dataService.giftCards);
+    _applyFilters();
+    isLoading.value = false;
+    _initialized = true;
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadInitial(force: true);
+
+  Future<void> loadMore() async {
+    if (!_hasMore || loadingMore.value || isLoading.value) return;
+    loadingMore.value = true;
+    await Future.delayed(const Duration(milliseconds: 360));
+    final nextPage = _page + 1;
+    final start = nextPage * MockDataService.giftCardPageSize;
+    final nextBatch = _filtered.skip(start).take(MockDataService.giftCardPageSize).toList();
+    if (nextBatch.isEmpty) {
+      _hasMore = false;
+    } else {
+      cards.value = [...cards.value, ...nextBatch];
+      _page = nextPage;
+      _hasMore = cards.value.length < _filtered.length;
+    }
+    loadingMore.value = false;
+    notifyListeners();
+  }
+
+  void selectOccasion(String? key) {
+    final current = selectedOccasion.value;
+    selectedOccasion.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void togglePerk(String key) {
+    final current = {...selectedPerks.value};
+    if (current.contains(key)) {
+      current.remove(key);
+    } else {
+      current.add(key);
+    }
+    selectedPerks.value = current;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void clearPerks() {
+    if (selectedPerks.value.isEmpty) return;
+    selectedPerks.value = <String>{};
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void _applyFilters() {
+    Iterable<GiftCard> filtered = _all;
+    final occasion = selectedOccasion.value;
+    final perks = selectedPerks.value;
+    if (occasion != null) {
+      filtered = filtered.where((card) => card.occasionKey == occasion);
+    }
+    if (perks.isNotEmpty) {
+      filtered = filtered.where((card) {
+        return perks.every((perk) => card.perkKeys.contains(perk));
+      });
+    }
+    _filtered = filtered.toList();
+    _page = 0;
+    final initial = _filtered.take(MockDataService.giftCardPageSize).toList();
+    cards.value = initial;
+    _hasMore = _filtered.length > initial.length;
+  }
+
+  @override
+  void dispose() {
+    cards.dispose();
+    isLoading.dispose();
+    loadingMore.dispose();
+    selectedOccasion.dispose();
+    selectedPerks.dispose();
     super.dispose();
   }
 }

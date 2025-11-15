@@ -118,6 +118,30 @@ class ChefStory {
   final int durationMinutes;
 }
 
+class GiftCard {
+  const GiftCard({
+    required this.id,
+    required this.titleKey,
+    required this.subtitleKey,
+    required this.imageUrl,
+    required this.valueAmount,
+    required this.occasionKey,
+    required this.deliveryKey,
+    required this.bonusKey,
+    required this.perkKeys,
+  });
+
+  final String id;
+  final String titleKey;
+  final String subtitleKey;
+  final String imageUrl;
+  final int valueAmount;
+  final String occasionKey;
+  final String deliveryKey;
+  final String bonusKey;
+  final List<String> perkKeys;
+}
+
 class AppNotification {
   const AppNotification({
     required this.id,
@@ -472,15 +496,86 @@ class MockDataService {
         statusKey: 'reservation_status_confirmed',
       ),
     ];
+
+    _giftCards = [
+      GiftCard(
+        id: 'gift_card_1',
+        titleKey: 'gift_card_title_weekend',
+        subtitleKey: 'gift_card_subtitle_weekend',
+        imageUrl: 'https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=900&q=80',
+        valueAmount: 50,
+        occasionKey: 'gift_occasion_thankyou',
+        deliveryKey: 'gift_delivery_instant',
+        bonusKey: 'gift_bonus_loyalty',
+        perkKeys: const ['gift_perk_free_delivery', 'gift_perk_bonus_points'],
+      ),
+      GiftCard(
+        id: 'gift_card_2',
+        titleKey: 'gift_card_title_brunch',
+        subtitleKey: 'gift_card_subtitle_brunch',
+        imageUrl: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80',
+        valueAmount: 75,
+        occasionKey: 'gift_occasion_birthday',
+        deliveryKey: 'gift_delivery_schedule',
+        bonusKey: 'gift_bonus_handwritten',
+        perkKeys: const ['gift_perk_personal_note', 'gift_perk_scheduled_send'],
+      ),
+      GiftCard(
+        id: 'gift_card_3',
+        titleKey: 'gift_card_title_date_night',
+        subtitleKey: 'gift_card_subtitle_date_night',
+        imageUrl: 'https://images.unsplash.com/photo-1481833761820-0509d3217039?auto=format&fit=crop&w=900&q=80',
+        valueAmount: 100,
+        occasionKey: 'gift_occasion_date',
+        deliveryKey: 'gift_delivery_instant',
+        bonusKey: 'gift_bonus_dual_course',
+        perkKeys: const ['gift_perk_free_delivery', 'gift_perk_premium_support'],
+      ),
+      GiftCard(
+        id: 'gift_card_4',
+        titleKey: 'gift_card_title_team',
+        subtitleKey: 'gift_card_subtitle_team',
+        imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80',
+        valueAmount: 150,
+        occasionKey: 'gift_occasion_team',
+        deliveryKey: 'gift_delivery_bulk',
+        bonusKey: 'gift_bonus_group_discount',
+        perkKeys: const ['gift_perk_bulk_upload', 'gift_perk_bonus_points'],
+      ),
+      GiftCard(
+        id: 'gift_card_5',
+        titleKey: 'gift_card_title_morning',
+        subtitleKey: 'gift_card_subtitle_morning',
+        imageUrl: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=900&q=80',
+        valueAmount: 35,
+        occasionKey: 'gift_occasion_congrats',
+        deliveryKey: 'gift_delivery_instant',
+        bonusKey: 'gift_bonus_breakfast',
+        perkKeys: const ['gift_perk_personal_note'],
+      ),
+      GiftCard(
+        id: 'gift_card_6',
+        titleKey: 'gift_card_title_global',
+        subtitleKey: 'gift_card_subtitle_global',
+        imageUrl: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=900&q=80',
+        valueAmount: 60,
+        occasionKey: 'gift_occasion_longdistance',
+        deliveryKey: 'gift_delivery_schedule',
+        bonusKey: 'gift_bonus_timezone',
+        perkKeys: const ['gift_perk_scheduled_send', 'gift_perk_premium_support'],
+      ),
+    ];
   }
 
   static const int popularPageSize = 6;
   static const int catalogPageSize = 8;
   static const int notificationsPageSize = 4;
+  static const int giftCardPageSize = 3;
 
   late final List<Restaurant> _restaurants;
   late final List<ReservationSlot> _reservationSlots;
   late final List<Reservation> _reservations;
+  late final List<GiftCard> _giftCards;
 
   final List<Category> mockCategories = [
     const Category(
@@ -521,6 +616,26 @@ class MockDataService {
     final start = page * catalogPageSize;
     return _foodItems.skip(start).take(catalogPageSize).toList();
   }
+
+  List<GiftCard> get giftCards => List.unmodifiable(_giftCards);
+
+  List<String> get giftOccasionKeys => const [
+        'gift_occasion_thankyou',
+        'gift_occasion_birthday',
+        'gift_occasion_date',
+        'gift_occasion_team',
+        'gift_occasion_congrats',
+        'gift_occasion_longdistance',
+      ];
+
+  List<String> get giftPerkKeys => const [
+        'gift_perk_free_delivery',
+        'gift_perk_bonus_points',
+        'gift_perk_personal_note',
+        'gift_perk_scheduled_send',
+        'gift_perk_premium_support',
+        'gift_perk_bulk_upload',
+      ];
 
   List<FoodItem> searchFood(String query) {
     final lower = query.toLowerCase();

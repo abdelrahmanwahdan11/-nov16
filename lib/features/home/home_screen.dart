@@ -17,6 +17,7 @@ import '../community/community_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../reservations/reservations_screen.dart';
 import '../reservations/reservation_sheet.dart';
+import '../gift_cards/gift_cards_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.state});
@@ -221,6 +222,76 @@ class _HomeScreenState extends State<HomeScreen> {
                                 preselected: highlightedRestaurant,
                               ),
                             ),
+                          const SizedBox(height: 24),
+                        ],
+                      );
+                    },
+                  ),
+                  AnimatedBuilder(
+                    animation: Listenable.merge([
+                      widget.state.giftCardsNotifier,
+                      widget.state.giftCardsNotifier.cards,
+                      widget.state.giftCardsNotifier.isLoading,
+                    ]),
+                    builder: (context, _) {
+                      final giftNotifier = widget.state.giftCardsNotifier;
+                      final cards = giftNotifier.cards.value;
+                      if (giftNotifier.isLoading.value && cards.isEmpty) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(
+                              title: loc.translate('gift_cards'),
+                              actionLabel: loc.translate('view_all'),
+                              onActionPressed: () => Navigator.of(context).pushNamed(GiftCardsScreen.route),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              height: 170,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemBuilder: (_, __) => const SkeletonLoader(
+                                  width: 220,
+                                  height: 160,
+                                  borderRadius: 24,
+                                ),
+                                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                                itemCount: 3,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }
+                      if (cards.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      final preview = cards.take(3).toList();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(
+                            title: loc.translate('gift_cards'),
+                            actionLabel: loc.translate('view_all'),
+                            onActionPressed: () => Navigator.of(context).pushNamed(GiftCardsScreen.route),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 170,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: preview.length,
+                              separatorBuilder: (_, __) => const SizedBox(width: 16),
+                              itemBuilder: (context, index) {
+                                final card = preview[index];
+                                return _GiftCardHomeCard(
+                                  card: card,
+                                  loc: loc,
+                                  onTap: () => Navigator.of(context).pushNamed(GiftCardsScreen.route),
+                                );
+                              },
+                            ),
+                          ),
                           const SizedBox(height: 24),
                         ],
                       );
@@ -933,6 +1004,116 @@ class _CommunityPreviewCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GiftCardHomeCard extends StatefulWidget {
+  const _GiftCardHomeCard({required this.card, required this.loc, required this.onTap});
+
+  final GiftCard card;
+  final AppLocalizations loc;
+  final VoidCallback onTap;
+
+  @override
+  State<_GiftCardHomeCard> createState() => _GiftCardHomeCardState();
+}
+
+class _GiftCardHomeCardState extends State<_GiftCardHomeCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final currency = widget.loc.translate('currency_symbol_prefix');
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          width: 220,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withOpacity(_hovered ? 0.22 : 0.12),
+                blurRadius: _hovered ? 22 : 12,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Hero(
+            tag: 'gift-card-${widget.card.id}',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.network(widget.card.imageUrl, fit: BoxFit.cover),
+                  ),
+                  Positioned.fill(
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 260),
+                      opacity: _hovered ? 0.55 : 0.4,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              theme.colorScheme.primary.withOpacity(0.2),
+                              Colors.black.withOpacity(0.78),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$currency${widget.card.valueAmount}',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          widget.loc.translate(widget.card.titleKey),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.loc.translate(widget.card.bonusKey),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: Colors.white.withOpacity(0.78),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
