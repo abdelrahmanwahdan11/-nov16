@@ -22,6 +22,7 @@ import '../subscriptions/subscriptions_screen.dart';
 import '../wellness/wellness_screen.dart';
 import '../catering/catering_screen.dart';
 import '../chefs/chefs_screen.dart';
+import '../masterclasses/masterclasses_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.state});
@@ -495,6 +496,79 @@ class _HomeScreenState extends State<HomeScreen> {
                               loc: loc,
                               onTap: () => Navigator.of(context)
                                   .pushNamed(CateringScreen.route),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
+              ),
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  widget.state.masterclassesNotifier,
+                  widget.state.masterclassesNotifier.classes,
+                  widget.state.masterclassesNotifier.isLoading,
+                ]),
+                builder: (context, _) {
+                  final masterNotifier = widget.state.masterclassesNotifier;
+                  final classes = masterNotifier.classes.value;
+                  if (masterNotifier.isLoading.value && classes.isEmpty) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SectionHeader(
+                          title: loc.translate('masterclasses_home_title'),
+                          actionLabel: loc.translate('masterclasses_home_cta'),
+                          onActionPressed: () => Navigator.of(context)
+                              .pushNamed(MasterclassesScreen.route),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 210,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (_, __) => const SkeletonLoader(
+                              width: 220,
+                              height: 200,
+                              borderRadius: 28,
+                            ),
+                            separatorBuilder: (_, __) => const SizedBox(width: 16),
+                            itemCount: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  }
+                  if (classes.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final preview = classes.take(3).toList();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SectionHeader(
+                        title: loc.translate('masterclasses_home_title'),
+                        actionLabel: loc.translate('masterclasses_home_cta'),
+                        onActionPressed: () => Navigator.of(context)
+                            .pushNamed(MasterclassesScreen.route),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 210,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: preview.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 16),
+                          itemBuilder: (context, index) {
+                            final masterclass = preview[index];
+                            return _MasterclassPreviewCard(
+                              masterclass: masterclass,
+                              loc: loc,
+                              onTap: () => Navigator.of(context)
+                                  .pushNamed(MasterclassesScreen.route),
                             );
                           },
                         ),
@@ -1666,6 +1740,153 @@ class _ChefPreviewCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MasterclassPreviewCard extends StatelessWidget {
+  const _MasterclassPreviewCard({
+    required this.masterclass,
+    required this.loc,
+    required this.onTap,
+  });
+
+  final Masterclass masterclass;
+  final AppLocalizations loc;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 220,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              Hero(
+                tag: masterclass.id,
+                child: AspectRatio(
+                  aspectRatio: 16 / 10,
+                  child: Image.network(
+                    masterclass.imageUrl,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.05),
+                        Colors.black.withOpacity(0.8),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 16,
+                left: 16,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    loc.translate(masterclass.levelKey),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.translate(masterclass.titleKey),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      loc.translate(masterclass.scheduleKey),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _TagChip(
+                          icon: IconlyLight.discovery,
+                          label: loc.translate(masterclass.formatKey),
+                        ),
+                        _TagChip(
+                          icon: IconlyLight.location,
+                          label: loc.translate(masterclass.cuisineKey),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TagChip extends StatelessWidget {
+  const _TagChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: theme.colorScheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -26,6 +26,7 @@ import '../subscriptions/subscriptions_screen.dart';
 import '../wellness/wellness_screen.dart';
 import '../catering/catering_screen.dart';
 import '../chefs/chefs_screen.dart';
+import '../masterclasses/masterclasses_screen.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key, required this.state});
@@ -371,6 +372,7 @@ class _AppDrawer extends StatelessWidget {
                   _DrawerTile(label: loc.translate('rewards'), icon: IconlyBold.star, onTap: () => Navigator.of(context).pushNamed(RewardsScreen.route)),
                   _DrawerTile(label: loc.translate('gift_cards'), icon: Icons.card_giftcard, onTap: () => Navigator.of(context).pushNamed(GiftCardsScreen.route)),
                   _DrawerTile(label: loc.translate('catering'), icon: IconlyBold.activity, onTap: () => Navigator.of(context).pushNamed(CateringScreen.route)),
+                  _DrawerTile(label: loc.translate('masterclasses'), icon: Icons.school, onTap: () => Navigator.of(context).pushNamed(MasterclassesScreen.route)),
                   _DrawerTile(label: loc.translate('chefs'), icon: Icons.restaurant_menu, onTap: () => Navigator.of(context).pushNamed(ChefsScreen.route)),
                   _DrawerTile(label: loc.translate('subscriptions'), icon: IconlyLight.graph, onTap: () => Navigator.of(context).pushNamed(SubscriptionsScreen.route)),
                   _DrawerTile(label: loc.translate('wellness'), icon: IconlyLight.shield_done, onTap: () => Navigator.of(context).pushNamed(WellnessScreen.route)),

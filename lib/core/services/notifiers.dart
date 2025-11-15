@@ -26,6 +26,7 @@ class AppState extends ChangeNotifier {
     reservationsNotifier = ReservationsNotifier(mock);
     giftCardsNotifier = GiftCardsNotifier(mock);
     cateringNotifier = CateringNotifier(mock);
+    masterclassesNotifier = MasterclassesNotifier(mock);
     subscriptionsNotifier = SubscriptionsNotifier(mock);
     wellnessNotifier = WellnessNotifier(mock);
     chefsNotifier = ChefsNotifier(mock);
@@ -48,6 +49,7 @@ class AppState extends ChangeNotifier {
   late final ReservationsNotifier reservationsNotifier;
   late final GiftCardsNotifier giftCardsNotifier;
   late final CateringNotifier cateringNotifier;
+  late final MasterclassesNotifier masterclassesNotifier;
   late final SubscriptionsNotifier subscriptionsNotifier;
   late final WellnessNotifier wellnessNotifier;
   late final ChefsNotifier chefsNotifier;
@@ -68,6 +70,7 @@ class AppState extends ChangeNotifier {
     unawaited(reservationsNotifier.loadInitial());
     unawaited(giftCardsNotifier.loadInitial());
     unawaited(cateringNotifier.loadInitial());
+    unawaited(masterclassesNotifier.loadInitial());
     unawaited(subscriptionsNotifier.loadInitial());
     unawaited(wellnessNotifier.loadInitial());
     unawaited(chefsNotifier.loadInitial());
@@ -91,6 +94,7 @@ class AppState extends ChangeNotifier {
     reservationsNotifier.dispose();
     giftCardsNotifier.dispose();
     cateringNotifier.dispose();
+    masterclassesNotifier.dispose();
     subscriptionsNotifier.dispose();
     wellnessNotifier.dispose();
     chefsNotifier.dispose();
@@ -1347,6 +1351,133 @@ class GiftCardsNotifier extends ChangeNotifier {
     loadingMore.dispose();
     selectedOccasion.dispose();
     selectedPerks.dispose();
+    super.dispose();
+  }
+}
+
+class MasterclassesNotifier extends ChangeNotifier {
+  MasterclassesNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  final ValueNotifier<List<Masterclass>> classes = ValueNotifier([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
+  final ValueNotifier<String?> selectedLevel = ValueNotifier(null);
+  final ValueNotifier<String?> selectedCuisine = ValueNotifier(null);
+  final ValueNotifier<String?> selectedFormat = ValueNotifier(null);
+
+  List<Masterclass> _all = [];
+  List<Masterclass> _filtered = [];
+  int _page = 0;
+  bool _hasMore = true;
+  bool _initialized = false;
+
+  List<String> get levelKeys => _dataService.masterclassLevelKeys;
+  List<String> get cuisineKeys => _dataService.masterclassCuisineKeys;
+  List<String> get formatKeys => _dataService.masterclassFormatKeys;
+  bool get hasMore => _hasMore;
+
+  Future<void> loadInitial({bool force = false}) async {
+    if (isLoading.value) return;
+    if (_initialized && !force) return;
+    isLoading.value = true;
+    _hasMore = true;
+    _page = 0;
+    classes.value = [];
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 420));
+    _all = List<Masterclass>.from(_dataService.masterclasses);
+    _applyFilters();
+    isLoading.value = false;
+    _initialized = true;
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadInitial(force: true);
+
+  Future<void> loadMore() async {
+    if (!_hasMore || loadingMore.value || isLoading.value) return;
+    loadingMore.value = true;
+    await Future.delayed(const Duration(milliseconds: 360));
+    final nextPage = _page + 1;
+    final start = nextPage * MockDataService.masterclassPageSize;
+    final nextBatch =
+        _filtered.skip(start).take(MockDataService.masterclassPageSize).toList();
+    if (nextBatch.isEmpty) {
+      _hasMore = false;
+    } else {
+      classes.value = [...classes.value, ...nextBatch];
+      _page = nextPage;
+      _hasMore = classes.value.length < _filtered.length;
+    }
+    loadingMore.value = false;
+    notifyListeners();
+  }
+
+  void selectLevel(String? key) {
+    final current = selectedLevel.value;
+    selectedLevel.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void selectCuisine(String? key) {
+    final current = selectedCuisine.value;
+    selectedCuisine.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void selectFormat(String? key) {
+    final current = selectedFormat.value;
+    selectedFormat.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void clearFilters() {
+    if (selectedLevel.value == null &&
+        selectedCuisine.value == null &&
+        selectedFormat.value == null) {
+      return;
+    }
+    selectedLevel.value = null;
+    selectedCuisine.value = null;
+    selectedFormat.value = null;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void _applyFilters() {
+    Iterable<Masterclass> filtered = _all;
+    final level = selectedLevel.value;
+    final cuisine = selectedCuisine.value;
+    final format = selectedFormat.value;
+    if (level != null) {
+      filtered = filtered.where((item) => item.levelKey == level);
+    }
+    if (cuisine != null) {
+      filtered = filtered.where((item) => item.cuisineKey == cuisine);
+    }
+    if (format != null) {
+      filtered = filtered.where((item) => item.formatKey == format);
+    }
+    _filtered = filtered.toList();
+    _page = 0;
+    final initial = _filtered.take(MockDataService.masterclassPageSize).toList();
+    classes.value = initial;
+    _hasMore = _filtered.length > initial.length;
+  }
+
+  @override
+  void dispose() {
+    classes.dispose();
+    isLoading.dispose();
+    loadingMore.dispose();
+    selectedLevel.dispose();
+    selectedCuisine.dispose();
+    selectedFormat.dispose();
     super.dispose();
   }
 }

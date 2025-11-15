@@ -224,6 +224,42 @@ class SubscriptionPlan {
   final String? highlightKey;
 }
 
+class Masterclass {
+  const Masterclass({
+    required this.id,
+    required this.titleKey,
+    required this.subtitleKey,
+    required this.imageUrl,
+    required this.instructorKey,
+    required this.instructorStoryKey,
+    required this.levelKey,
+    required this.cuisineKey,
+    required this.formatKey,
+    required this.durationMinutes,
+    required this.availableSpots,
+    required this.scheduleKey,
+    required this.highlightKeys,
+    required this.takeawayKeys,
+    required this.requirementKeys,
+  });
+
+  final String id;
+  final String titleKey;
+  final String subtitleKey;
+  final String imageUrl;
+  final String instructorKey;
+  final String instructorStoryKey;
+  final String levelKey;
+  final String cuisineKey;
+  final String formatKey;
+  final int durationMinutes;
+  final int availableSpots;
+  final String scheduleKey;
+  final List<String> highlightKeys;
+  final List<String> takeawayKeys;
+  final List<String> requirementKeys;
+}
+
 class WellnessProgram {
   const WellnessProgram({
     required this.id,
@@ -674,6 +710,7 @@ class MockDataService {
       ),
     ];
 
+    _masterclasses = _masterclassSeeds;
     _wellnessPrograms = _wellnessProgramSeeds;
     _subscriptions = _subscriptionPlans;
     _cateringPackages = _cateringPackageSeeds;
@@ -687,12 +724,14 @@ class MockDataService {
   static const int subscriptionPageSize = 4;
   static const int wellnessPageSize = 3;
   static const int cateringPageSize = 3;
+  static const int masterclassPageSize = 3;
   static const int chefPageSize = 3;
 
   late final List<Restaurant> _restaurants;
   late final List<ReservationSlot> _reservationSlots;
   late final List<Reservation> _reservations;
   late final List<GiftCard> _giftCards;
+  late final List<Masterclass> _masterclasses;
   late final List<SubscriptionPlan> _subscriptions;
   late final List<WellnessProgram> _wellnessPrograms;
   late final List<CateringPackage> _cateringPackages;
@@ -743,6 +782,7 @@ class MockDataService {
   }
 
   List<GiftCard> get giftCards => List.unmodifiable(_giftCards);
+  List<Masterclass> get masterclasses => List.unmodifiable(_masterclasses);
 
   List<SubscriptionPlan> get subscriptionPlans => List.unmodifiable(_subscriptions);
 
@@ -824,6 +864,25 @@ class MockDataService {
         'catering_service_plated',
         'catering_service_family_style',
         'catering_service_live_station',
+      ];
+
+  List<String> get masterclassLevelKeys => const [
+        'masterclasses_filter_level_beginner',
+        'masterclasses_filter_level_intermediate',
+        'masterclasses_filter_level_advanced',
+      ];
+
+  List<String> get masterclassCuisineKeys => const [
+        'masterclasses_cuisine_italian',
+        'masterclasses_cuisine_middle_eastern',
+        'masterclasses_cuisine_asian',
+        'masterclasses_cuisine_plant_forward',
+      ];
+
+  List<String> get masterclassFormatKeys => const [
+        'masterclasses_format_in_person',
+        'masterclasses_format_virtual',
+        'masterclasses_format_hybrid',
       ];
 
   Map<String, List<int>> get cateringHeadcountRanges => const {
@@ -1061,6 +1120,116 @@ final List<LoyaltyReward> _profileRewards = [
     description: 'Schedule a live session with our culinary concierge.',
     pointsRequired: 900,
     iconUrl: 'https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=200&q=80',
+  ),
+];
+
+final List<Masterclass> _masterclassSeeds = [
+  const Masterclass(
+    id: 'masterclass_1',
+    titleKey: 'masterclass_title_truffle',
+    subtitleKey: 'masterclass_subtitle_truffle',
+    imageUrl: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=900&q=80',
+    instructorKey: 'masterclasses_instructor_sophia',
+    instructorStoryKey: 'masterclasses_instructor_story_sophia',
+    levelKey: 'masterclasses_filter_level_intermediate',
+    cuisineKey: 'masterclasses_cuisine_italian',
+    formatKey: 'masterclasses_format_in_person',
+    durationMinutes: 105,
+    availableSpots: 4,
+    scheduleKey: 'masterclasses_schedule_evening',
+    highlightKeys: [
+      'masterclasses_highlight_station',
+      'masterclasses_highlight_plating',
+      'masterclasses_highlight_tools',
+    ],
+    takeawayKeys: [
+      'masterclasses_takeaway_pasta',
+      'masterclasses_takeaway_plating',
+    ],
+    requirementKeys: [
+      'masterclasses_requirement_apron',
+      'masterclasses_requirement_workspace',
+    ],
+  ),
+  const Masterclass(
+    id: 'masterclass_2',
+    titleKey: 'masterclass_title_spice',
+    subtitleKey: 'masterclass_subtitle_spice',
+    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80&sat=30',
+    instructorKey: 'masterclasses_instructor_malik',
+    instructorStoryKey: 'masterclasses_instructor_story_malik',
+    levelKey: 'masterclasses_filter_level_advanced',
+    cuisineKey: 'masterclasses_cuisine_asian',
+    formatKey: 'masterclasses_format_virtual',
+    durationMinutes: 95,
+    availableSpots: 14,
+    scheduleKey: 'masterclasses_schedule_twilight',
+    highlightKeys: [
+      'masterclasses_highlight_pairing',
+      'masterclasses_highlight_station',
+    ],
+    takeawayKeys: [
+      'masterclasses_takeaway_spice',
+      'masterclasses_takeaway_ferment',
+    ],
+    requirementKeys: [
+      'masterclasses_requirement_workspace',
+      'masterclasses_requirement_pan',
+    ],
+  ),
+  const Masterclass(
+    id: 'masterclass_3',
+    titleKey: 'masterclass_title_harvest',
+    subtitleKey: 'masterclass_subtitle_harvest',
+    imageUrl: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80',
+    instructorKey: 'masterclasses_instructor_amelia',
+    instructorStoryKey: 'masterclasses_instructor_story_amelia',
+    levelKey: 'masterclasses_filter_level_beginner',
+    cuisineKey: 'masterclasses_cuisine_plant_forward',
+    formatKey: 'masterclasses_format_hybrid',
+    durationMinutes: 110,
+    availableSpots: 8,
+    scheduleKey: 'masterclasses_schedule_brunch',
+    highlightKeys: [
+      'masterclasses_highlight_seasonal',
+      'masterclasses_highlight_tools',
+      'masterclasses_highlight_plating',
+    ],
+    takeawayKeys: [
+      'masterclasses_takeaway_ferment',
+      'masterclasses_takeaway_plating',
+    ],
+    requirementKeys: [
+      'masterclasses_requirement_apron',
+      'masterclasses_requirement_blender',
+    ],
+  ),
+  const Masterclass(
+    id: 'masterclass_4',
+    titleKey: 'masterclass_title_family_grill',
+    subtitleKey: 'masterclass_subtitle_family_grill',
+    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80&warm=2',
+    instructorKey: 'masterclasses_instructor_hassan',
+    instructorStoryKey: 'masterclasses_instructor_story_hassan',
+    levelKey: 'masterclasses_filter_level_beginner',
+    cuisineKey: 'masterclasses_cuisine_middle_eastern',
+    formatKey: 'masterclasses_format_in_person',
+    durationMinutes: 120,
+    availableSpots: 6,
+    scheduleKey: 'masterclasses_schedule_weekend',
+    highlightKeys: [
+      'masterclasses_highlight_family',
+      'masterclasses_highlight_pairing',
+      'masterclasses_highlight_station',
+    ],
+    takeawayKeys: [
+      'masterclasses_takeaway_spice',
+      'masterclasses_takeaway_plating',
+    ],
+    requirementKeys: [
+      'masterclasses_requirement_apron',
+      'masterclasses_requirement_pan',
+    ],
   ),
 ];
 

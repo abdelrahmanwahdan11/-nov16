@@ -33,6 +33,7 @@ import '../../features/subscriptions/subscriptions_screen.dart';
 import '../../features/wellness/wellness_screen.dart';
 import '../../features/catering/catering_screen.dart';
 import '../../features/chefs/chefs_screen.dart';
+import '../../features/masterclasses/masterclasses_screen.dart';
 import '../services/mock_data_service.dart';
 import '../services/notifiers.dart';
 
@@ -107,6 +108,8 @@ class AppRouter {
           return WellnessScreen(state: state);
         case CateringScreen.route:
           return CateringScreen(state: state);
+        case MasterclassesScreen.route:
+          return MasterclassesScreen(state: state);
         case ChefsScreen.route:
           return ChefsScreen(state: state);
         default:
