@@ -16,6 +16,9 @@ import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/orders/orders_screen.dart';
 import '../../features/orders/track_order_screen.dart';
 import '../../features/profile/profile_screen.dart';
+import '../../features/profile/manage_address_screen.dart';
+import '../../features/profile/payment_methods_screen.dart';
+import '../../features/rewards/rewards_screen.dart';
 import '../../features/restaurant/restaurant_details_screen.dart';
 import '../../features/restaurant/restaurants_screen.dart';
 import '../../features/search/search_screen.dart';
@@ -67,12 +70,18 @@ class AppRouter {
           return TrackOrderScreen(order: settings.arguments as Order);
         case ProfileScreen.route:
           return ProfileScreen(state: state);
+        case ManageAddressScreen.route:
+          return ManageAddressScreen(state: state);
+        case PaymentMethodsScreen.route:
+          return PaymentMethodsScreen(state: state);
         case SettingsScreen.route:
           return SettingsScreen(state: state);
         case FavoritesScreen.route:
           return FavoritesScreen(state: state);
         case HelpCenterScreen.route:
           return HelpCenterScreen(state: state);
+        case RewardsScreen.route:
+          return RewardsScreen(state: state);
         default:
           return const OnboardingScreen();
       }

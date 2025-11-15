@@ -74,6 +74,147 @@ class Order {
   final List<FoodItem> items;
 }
 
+class UserAddress {
+  const UserAddress({
+    required this.id,
+    required this.label,
+    required this.details,
+    this.notes = '',
+    this.isDefault = false,
+  });
+
+  final String id;
+  final String label;
+  final String details;
+  final String notes;
+  final bool isDefault;
+
+  UserAddress copyWith({String? id, String? label, String? details, String? notes, bool? isDefault}) {
+    return UserAddress(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      details: details ?? this.details,
+      notes: notes ?? this.notes,
+      isDefault: isDefault ?? this.isDefault,
+    );
+  }
+}
+
+class PaymentMethod {
+  const PaymentMethod({
+    required this.id,
+    required this.brand,
+    required this.last4,
+    required this.expiry,
+    this.isPrimary = false,
+  });
+
+  final String id;
+  final String brand;
+  final String last4;
+  final String expiry;
+  final bool isPrimary;
+
+  PaymentMethod copyWith({String? id, String? brand, String? last4, String? expiry, bool? isPrimary}) {
+    return PaymentMethod(
+      id: id ?? this.id,
+      brand: brand ?? this.brand,
+      last4: last4 ?? this.last4,
+      expiry: expiry ?? this.expiry,
+      isPrimary: isPrimary ?? this.isPrimary,
+    );
+  }
+}
+
+class LoyaltyReward {
+  const LoyaltyReward({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.pointsRequired,
+    required this.iconUrl,
+    this.isClaimed = false,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final int pointsRequired;
+  final String iconUrl;
+  final bool isClaimed;
+
+  LoyaltyReward copyWith({String? id, String? title, String? description, int? pointsRequired, String? iconUrl, bool? isClaimed}) {
+    return LoyaltyReward(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      pointsRequired: pointsRequired ?? this.pointsRequired,
+      iconUrl: iconUrl ?? this.iconUrl,
+      isClaimed: isClaimed ?? this.isClaimed,
+    );
+  }
+}
+
+class UserProfile {
+  const UserProfile({
+    required this.name,
+    required this.email,
+    required this.handle,
+    required this.avatarUrl,
+    required this.spent,
+    required this.tier,
+    required this.loyaltyPoints,
+    required this.nextTierPoints,
+    required this.addresses,
+    required this.paymentMethods,
+    required this.rewards,
+    required this.favoriteRestaurants,
+  });
+
+  final String name;
+  final String email;
+  final String handle;
+  final String avatarUrl;
+  final double spent;
+  final String tier;
+  final int loyaltyPoints;
+  final int nextTierPoints;
+  final List<UserAddress> addresses;
+  final List<PaymentMethod> paymentMethods;
+  final List<LoyaltyReward> rewards;
+  final List<String> favoriteRestaurants;
+
+  UserProfile copyWith({
+    String? name,
+    String? email,
+    String? handle,
+    String? avatarUrl,
+    double? spent,
+    String? tier,
+    int? loyaltyPoints,
+    int? nextTierPoints,
+    List<UserAddress>? addresses,
+    List<PaymentMethod>? paymentMethods,
+    List<LoyaltyReward>? rewards,
+    List<String>? favoriteRestaurants,
+  }) {
+    return UserProfile(
+      name: name ?? this.name,
+      email: email ?? this.email,
+      handle: handle ?? this.handle,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      spent: spent ?? this.spent,
+      tier: tier ?? this.tier,
+      loyaltyPoints: loyaltyPoints ?? this.loyaltyPoints,
+      nextTierPoints: nextTierPoints ?? this.nextTierPoints,
+      addresses: addresses ?? this.addresses,
+      paymentMethods: paymentMethods ?? this.paymentMethods,
+      rewards: rewards ?? this.rewards,
+      favoriteRestaurants: favoriteRestaurants ?? this.favoriteRestaurants,
+    );
+  }
+}
+
 class MockDataService {
   static const int popularPageSize = 6;
   static const int catalogPageSize = 8;
@@ -163,6 +304,8 @@ class MockDataService {
       );
 
   List<FoodItem> get _foodItems => _baseFoodItems;
+
+  UserProfile get userProfile => _profile;
 }
 
 final List<FoodItem> _baseFoodItems = List.generate(
@@ -180,4 +323,71 @@ final List<FoodItem> _baseFoodItems = List.generate(
     calories: 350 + index * 10,
     ingredients: const ['Cheese', 'Tomato', 'Basil', 'Herbs'],
   ),
+);
+
+final List<UserAddress> _profileAddresses = [
+  const UserAddress(
+    id: 'addr_1',
+    label: 'Home',
+    details: '123 Market Street, San Francisco, CA 94103',
+    notes: 'Ring the bell twice',
+    isDefault: true,
+  ),
+  const UserAddress(
+    id: 'addr_2',
+    label: 'Office',
+    details: '88 Mission Blvd, 6th Floor',
+    notes: 'Leave with reception',
+  ),
+  const UserAddress(
+    id: 'addr_3',
+    label: 'Gym',
+    details: '455 Sunset Ave, Locker 21',
+    notes: 'Deliver before 7pm',
+  ),
+];
+
+final List<PaymentMethod> _profilePayments = [
+  const PaymentMethod(id: 'pm_1', brand: 'Visa', last4: '4242', expiry: '08/26', isPrimary: true),
+  const PaymentMethod(id: 'pm_2', brand: 'Apple Pay', last4: '0007', expiry: '—'),
+  const PaymentMethod(id: 'pm_3', brand: 'Mastercard', last4: '9921', expiry: '04/25'),
+];
+
+final List<LoyaltyReward> _profileRewards = [
+  const LoyaltyReward(
+    id: 'reward_1',
+    title: 'Free Delivery',
+    description: 'Enjoy one free delivery on orders above $15.',
+    pointsRequired: 200,
+    iconUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80',
+  ),
+  const LoyaltyReward(
+    id: 'reward_2',
+    title: 'Dessert Treat',
+    description: 'Unlock a complimentary dessert from select partners.',
+    pointsRequired: 420,
+    iconUrl: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=200&q=80',
+  ),
+  const LoyaltyReward(
+    id: 'reward_3',
+    title: 'VIP Chef Call',
+    description: 'Schedule a live session with our culinary concierge.',
+    pointsRequired: 900,
+    iconUrl: 'https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=200&q=80',
+  ),
+];
+
+final UserProfile _profile = UserProfile(
+  name: 'Lina Bright',
+  email: 'lina@example.com',
+  handle: '@linabright',
+  avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80',
+  spent: 15000,
+  tier: 'Rose Gold',
+  loyaltyPoints: 680,
+  nextTierPoints: 1200,
+  addresses: _profileAddresses,
+  paymentMethods: _profilePayments,
+  rewards: _profileRewards,
+  favoriteRestaurants: const ['Spicy Heaven', 'Blooming Bowls', 'Saffron Soul'],
 );

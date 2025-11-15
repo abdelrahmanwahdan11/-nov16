@@ -7,26 +7,32 @@ import 'shared_prefs_service.dart';
 import 'mock_data_service.dart';
 
 class AppState extends ChangeNotifier {
-  AppState()
-      : themeNotifier = ThemeNotifier(),
-        localeNotifier = LocaleNotifier(),
-        homeFeedNotifier = HomeFeedNotifier(MockDataService()),
-        catalogNotifier = CatalogNotifier(MockDataService()),
-        searchNotifier = SearchNotifier(MockDataService()),
-        cartNotifier = CartNotifier(),
-        comparisonNotifier = ComparisonNotifier(),
-        favoritesNotifier = FavoritesNotifier(),
-        ordersNotifier = OrdersNotifier(MockDataService());
+  AppState() {
+    final mock = MockDataService();
+    mockDataService = mock;
+    themeNotifier = ThemeNotifier();
+    localeNotifier = LocaleNotifier();
+    homeFeedNotifier = HomeFeedNotifier(mock);
+    catalogNotifier = CatalogNotifier(mock);
+    searchNotifier = SearchNotifier(mock);
+    cartNotifier = CartNotifier();
+    comparisonNotifier = ComparisonNotifier();
+    favoritesNotifier = FavoritesNotifier();
+    ordersNotifier = OrdersNotifier(mock);
+    profileNotifier = ProfileNotifier(mock);
+  }
 
-  final ThemeNotifier themeNotifier;
-  final LocaleNotifier localeNotifier;
-  final HomeFeedNotifier homeFeedNotifier;
-  final CatalogNotifier catalogNotifier;
-  final SearchNotifier searchNotifier;
-  final CartNotifier cartNotifier;
-  final ComparisonNotifier comparisonNotifier;
-  final FavoritesNotifier favoritesNotifier;
-  final OrdersNotifier ordersNotifier;
+  late final MockDataService mockDataService;
+  late final ThemeNotifier themeNotifier;
+  late final LocaleNotifier localeNotifier;
+  late final HomeFeedNotifier homeFeedNotifier;
+  late final CatalogNotifier catalogNotifier;
+  late final SearchNotifier searchNotifier;
+  late final CartNotifier cartNotifier;
+  late final ComparisonNotifier comparisonNotifier;
+  late final FavoritesNotifier favoritesNotifier;
+  late final OrdersNotifier ordersNotifier;
+  late final ProfileNotifier profileNotifier;
 
   final SharedPrefsService prefs = SharedPrefsService();
 
@@ -37,6 +43,7 @@ class AppState extends ChangeNotifier {
     unawaited(homeFeedNotifier.loadInitial());
     unawaited(catalogNotifier.loadInitial());
     unawaited(ordersNotifier.loadInitial());
+    unawaited(profileNotifier.loadProfile());
   }
 
   @override
@@ -50,6 +57,7 @@ class AppState extends ChangeNotifier {
     comparisonNotifier.dispose();
     favoritesNotifier.dispose();
     ordersNotifier.dispose();
+    profileNotifier.dispose();
     super.dispose();
   }
 }
@@ -468,6 +476,181 @@ class OrdersNotifier extends ChangeNotifier {
   void dispose() {
     currentOrders.dispose();
     historyOrders.dispose();
+    super.dispose();
+  }
+}
+
+class ProfileNotifier extends ChangeNotifier {
+  ProfileNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  final ValueNotifier<List<UserAddress>> addresses = ValueNotifier([]);
+  final ValueNotifier<List<PaymentMethod>> paymentMethods = ValueNotifier([]);
+  final ValueNotifier<List<LoyaltyReward>> rewards = ValueNotifier([]);
+  final ValueNotifier<List<String>> favoriteRestaurants = ValueNotifier([]);
+  final ValueNotifier<double> loyaltyProgress = ValueNotifier(0);
+  final ValueNotifier<int> loyaltyPoints = ValueNotifier(0);
+  final ValueNotifier<int> loyaltyGoal = ValueNotifier(1200);
+  final ValueNotifier<String> tier = ValueNotifier('Rose Gold');
+
+  static const List<String> _tierCycle = ['Rose Gold', 'Saffron Elite', 'Crimson Icon'];
+
+  UserProfile? _profile;
+  bool _loading = false;
+  bool _initialized = false;
+  int _addressCounter = 0;
+  int _paymentCounter = 0;
+  int _tierIndex = 0;
+
+  bool get isLoading => _loading;
+  UserProfile? get profile => _profile;
+  bool get canClaimMilestone => loyaltyPoints.value >= loyaltyGoal.value;
+
+  Future<void> loadProfile({bool force = false}) async {
+    if (_loading) return;
+    if (_initialized && !force) return;
+    _loading = true;
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 480));
+    final data = _dataService.userProfile;
+    _profile = data;
+    addresses.value = data.addresses.map((address) => address).toList();
+    paymentMethods.value = data.paymentMethods.map((method) => method).toList();
+    rewards.value = data.rewards.map((reward) => reward).toList();
+    favoriteRestaurants.value = List<String>.from(data.favoriteRestaurants);
+    loyaltyGoal.value = data.nextTierPoints;
+    loyaltyPoints.value = data.loyaltyPoints;
+    tier.value = data.tier;
+    _tierIndex = _tierCycle.indexOf(data.tier);
+    if (_tierIndex < 0) {
+      _tierIndex = 0;
+      tier.value = _tierCycle.first;
+    }
+    loyaltyProgress.value = _computeProgress(loyaltyPoints.value, loyaltyGoal.value);
+    _addressCounter = addresses.value.length;
+    _paymentCounter = paymentMethods.value.length;
+    _initialized = true;
+    _loading = false;
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadProfile(force: true);
+
+  void setDefaultAddress(String id) {
+    final updated = [
+      for (final address in addresses.value) address.copyWith(isDefault: address.id == id)
+    ];
+    addresses.value = updated;
+    _profile = _profile?.copyWith(addresses: updated);
+    notifyListeners();
+  }
+
+  void addQuickAddress() {
+    _addressCounter += 1;
+    final newAddress = UserAddress(
+      id: 'addr_${DateTime.now().millisecondsSinceEpoch}',
+      label: 'New Spot $_addressCounter',
+      details: '456 Culinary Ave, Suite $_addressCounter',
+      notes: 'Ring the bell upon arrival',
+      isDefault: false,
+    );
+    addresses.value = [...addresses.value, newAddress];
+    _profile = _profile?.copyWith(addresses: addresses.value);
+    notifyListeners();
+  }
+
+  void setPrimaryPayment(String id) {
+    final updated = [
+      for (final method in paymentMethods.value)
+        method.copyWith(isPrimary: method.id == id)
+    ];
+    paymentMethods.value = updated;
+    _profile = _profile?.copyWith(paymentMethods: updated);
+    notifyListeners();
+  }
+
+  void addMockPayment() {
+    _paymentCounter += 1;
+    final suffix = ((_paymentCounter * 873) % 9000) + 1000;
+    final method = PaymentMethod(
+      id: 'pm_${DateTime.now().millisecondsSinceEpoch}',
+      brand: _paymentCounter % 2 == 0 ? 'Visa' : 'Mastercard',
+      last4: suffix.toString().padLeft(4, '0'),
+      expiry: '0${(_paymentCounter % 9) + 1}/2${(_paymentCounter % 5) + 4}',
+      isPrimary: paymentMethods.value.isEmpty,
+    );
+    paymentMethods.value = [...paymentMethods.value, method];
+    _profile = _profile?.copyWith(paymentMethods: paymentMethods.value);
+    notifyListeners();
+  }
+
+  void toggleRewardClaimed(String id) {
+    final updated = [
+      for (final reward in rewards.value)
+        reward.id == id ? reward.copyWith(isClaimed: !reward.isClaimed) : reward
+    ];
+    rewards.value = updated;
+    _profile = _profile?.copyWith(rewards: updated);
+    notifyListeners();
+  }
+
+  void boostProgress([int points = 120]) {
+    final totalPoints = loyaltyPoints.value + points;
+    loyaltyPoints.value = totalPoints;
+    loyaltyProgress.value = _computeProgress(loyaltyPoints.value, loyaltyGoal.value);
+    _profile = _profile?.copyWith(
+      loyaltyPoints: loyaltyPoints.value,
+      spent: (_profile?.spent ?? 0) + points / 2,
+    );
+    notifyListeners();
+  }
+
+  void claimMilestone() {
+    if (!canClaimMilestone) return;
+    final remainder = loyaltyPoints.value - loyaltyGoal.value;
+    loyaltyGoal.value += 400;
+    loyaltyPoints.value = remainder;
+    loyaltyProgress.value = _computeProgress(loyaltyPoints.value, loyaltyGoal.value);
+    _tierIndex = (_tierIndex + 1) % _tierCycle.length;
+    tier.value = _tierCycle[_tierIndex];
+    _profile = _profile?.copyWith(
+      tier: tier.value,
+      loyaltyPoints: loyaltyPoints.value,
+      nextTierPoints: loyaltyGoal.value,
+    );
+    notifyListeners();
+  }
+
+  void toggleFavoriteRestaurant(String restaurant) {
+    final set = favoriteRestaurants.value.toSet();
+    if (!set.add(restaurant)) {
+      set.remove(restaurant);
+    }
+    final list = set.toList()..sort();
+    favoriteRestaurants.value = list;
+    _profile = _profile?.copyWith(favoriteRestaurants: list);
+    notifyListeners();
+  }
+
+  double _computeProgress(int points, int goal) {
+    if (goal <= 0) {
+      return 0;
+    }
+    final ratio = points / goal;
+    return ratio.clamp(0.0, 1.0);
+  }
+
+  @override
+  void dispose() {
+    addresses.dispose();
+    paymentMethods.dispose();
+    rewards.dispose();
+    favoriteRestaurants.dispose();
+    loyaltyProgress.dispose();
+    loyaltyPoints.dispose();
+    loyaltyGoal.dispose();
+    tier.dispose();
     super.dispose();
   }
 }

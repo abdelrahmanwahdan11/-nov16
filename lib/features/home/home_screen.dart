@@ -4,11 +4,13 @@ import 'package:iconly/iconly.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/services/mock_data_service.dart';
 import '../../core/services/notifiers.dart';
+import '../../core/widgets/loyalty_progress_card.dart';
 import '../../core/widgets/rating_stars.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/skeleton_loader.dart';
 import '../catalog/catalog_screen.dart';
 import '../food_details/food_details_screen.dart';
+import '../rewards/rewards_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.state});
@@ -96,6 +98,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _OfferBanner(theme: theme, loc: loc),
                   const SizedBox(height: 24),
+                  AnimatedBuilder(
+                    animation: Listenable.merge([
+                      widget.state.profileNotifier,
+                      widget.state.profileNotifier.loyaltyProgress,
+                      widget.state.profileNotifier.loyaltyPoints,
+                      widget.state.profileNotifier.loyaltyGoal,
+                      widget.state.profileNotifier.tier,
+                    ]),
+                    builder: (context, _) {
+                      final profileNotifier = widget.state.profileNotifier;
+                      if (profileNotifier.profile == null) {
+                        if (profileNotifier.isLoading) {
+                          return const SkeletonLoader(height: 160, borderRadius: 28);
+                        }
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        children: [
+                          LoyaltyProgressCard(
+                            loc: loc,
+                            tier: profileNotifier.tier.value,
+                            progress: profileNotifier.loyaltyProgress.value,
+                            points: profileNotifier.loyaltyPoints.value,
+                            goal: profileNotifier.loyaltyGoal.value,
+                            heroTag: 'loyalty-card',
+                            onTap: () => Navigator.of(context).pushNamed(RewardsScreen.route),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
                   SectionHeader(
                     title: loc.translate('categories'),
                     actionLabel: loc.translate('view_all'),

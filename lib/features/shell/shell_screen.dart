@@ -13,6 +13,7 @@ import '../help/help_center_screen.dart';
 import '../home/home_screen.dart';
 import '../orders/orders_screen.dart';
 import '../profile/profile_screen.dart';
+import '../rewards/rewards_screen.dart';
 import '../restaurant/restaurants_screen.dart';
 import '../search/search_screen.dart';
 import '../settings/settings_screen.dart';
@@ -259,34 +260,54 @@ class _AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final profileNotifier = state.profileNotifier;
     return Drawer(
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(topRight: Radius.circular(32), bottomRight: Radius.circular(32))),
       child: SafeArea(
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 32,
-                    backgroundImage: NetworkImage('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80'),
+            AnimatedBuilder(
+              animation: Listenable.merge([profileNotifier, profileNotifier.loyaltyProgress, profileNotifier.tier]),
+              builder: (context, _) {
+                final profile = profileNotifier.profile;
+                return Container(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundImage: NetworkImage(profile?.avatarUrl ?? 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80'),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(profile?.name ?? 'Foodly', style: theme.textTheme.headlineSmall),
+                            const SizedBox(height: 4),
+                            Text(profile?.email ?? 'hello@foodly.app', style: theme.textTheme.bodySmall),
+                            const SizedBox(height: 12),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: LinearProgressIndicator(
+                                minHeight: 6,
+                                value: profileNotifier.loyaltyProgress.value,
+                                backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '${loc.translate('loyalty_tier')}: ${profileNotifier.tier.value}',
+                              style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary),
+                            )
+                          ],
+                        ),
+                      )
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Lina Bright', style: theme.textTheme.headlineSmall),
-                        const SizedBox(height: 4),
-                        Text('lina@example.com', style: theme.textTheme.bodySmall),
-                        const SizedBox(height: 4),
-                        Text('15k+ Spend', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary)),
-                      ],
-                    ),
-                  )
-                ],
-              ),
+                );
+              },
             ),
             Expanded(
               child: ListView(
@@ -295,6 +316,7 @@ class _AppDrawer extends StatelessWidget {
                   _DrawerTile(label: loc.translate('restaurants'), icon: IconlyLight.discovery, onTap: () => Navigator.of(context).pushReplacementNamed(RestaurantsScreen.route)),
                   _DrawerTile(label: loc.translate('catalog'), icon: IconlyLight.category, onTap: () => Navigator.of(context).pushNamed(CatalogScreen.route)),
                   _DrawerTile(label: loc.translate('comparison'), icon: IconlyBold.chart, onTap: () => Navigator.of(context).pushNamed(ComparisonScreen.route)),
+                  _DrawerTile(label: loc.translate('rewards'), icon: IconlyBold.star, onTap: () => Navigator.of(context).pushNamed(RewardsScreen.route)),
                   _DrawerTile(label: loc.translate('orders'), icon: IconlyLight.document, onTap: () => Navigator.of(context).pushNamed(OrdersScreen.route)),
                   _DrawerTile(label: loc.translate('favorites'), icon: IconlyBold.heart, onTap: () => Navigator.of(context).pushNamed(FavoritesScreen.route)),
                   _DrawerTile(label: loc.translate('chat'), icon: IconlyLight.message, onTap: () => Navigator.of(context).pushNamed(ChatScreen.route)),
