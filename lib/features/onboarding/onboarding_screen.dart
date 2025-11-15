@@ -78,6 +78,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final padding = EdgeInsets.symmetric(horizontal: context.responsiveHorizontal);
+    final textBottomSpacing = context.screenHeight < 680
+        ? 200.0
+        : context.screenHeight < 820
+            ? 240.0
+            : 300.0;
 
     return Scaffold(
       body: Stack(
@@ -125,6 +130,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: context.responsiveHorizontal)
+                    .copyWith(bottom: textBottomSpacing),
+                child: Align(
+                  alignment: AlignmentDirectional.bottomStart,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: context.constrainedWidth(540)),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      child: _SlideText(
+                        key: ValueKey(_slides[_page]['title']),
+                        title: _slides[_page]['title']!,
+                        subtitle: _slides[_page]['subtitle']!,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           Align(
             alignment: Alignment.bottomCenter,
             child: SafeArea(
@@ -136,7 +163,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     constraints: BoxConstraints(maxWidth: context.constrainedWidth(520)),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: theme.cardColor,
+                        color: theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
@@ -152,15 +179,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 400),
-                              child: _SlideText(
-                                key: ValueKey(_slides[_page]['title']),
-                                title: _slides[_page]['title']!,
-                                subtitle: _slides[_page]['subtitle']!,
-                              ),
-                            ),
-                            SizedBox(height: context.responsiveValue(16, 24)),
+                            SizedBox(height: context.responsiveValue(4, 8)),
                             SizedBox(
                               width: double.infinity,
                               child: PrimaryButton(
@@ -214,7 +233,7 @@ class _SlideText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
+    final color = Colors.white;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -223,7 +242,7 @@ class _SlideText extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.headlineLarge?.copyWith(
-            color: onSurface,
+            color: color,
             fontSize: context.scaleFont(theme.textTheme.headlineLarge?.fontSize ?? 28),
           ),
         ),
@@ -233,7 +252,7 @@ class _SlideText extends StatelessWidget {
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: onSurface.withOpacity(0.72),
+            color: color.withOpacity(0.8),
             fontSize: context.scaleFont(theme.textTheme.bodyLarge?.fontSize ?? 16),
           ),
         ),

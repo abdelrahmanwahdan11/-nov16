@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -63,9 +64,21 @@ class _FoodDeliveryAppState extends State<FoodDeliveryApp> {
                 SystemChrome.setSystemUIOverlayStyle(
                   AppTheme.overlayStyle(state.themeNotifier.isDarkMode),
                 );
-                return Directionality(
+                final mediaQuery = MediaQuery.of(context);
+                final clampedScaler = mediaQuery.textScaler.clamp(
+                  minScaleFactor: 0.9,
+                  maxScaleFactor: 1.2,
+                );
+                final directionality = Directionality(
                   textDirection: AppLocalizations.directionOf(locale),
                   child: child ?? const SizedBox.shrink(),
+                );
+                return MediaQuery(
+                  data: mediaQuery.copyWith(textScaler: clampedScaler),
+                  child: ScrollConfiguration(
+                    behavior: const _AppScrollBehavior(),
+                    child: directionality,
+                  ),
                 );
               },
               onGenerateRoute: _router.onGenerateRoute,
@@ -76,4 +89,16 @@ class _FoodDeliveryAppState extends State<FoodDeliveryApp> {
       },
     );
   }
+}
+
+class _AppScrollBehavior extends MaterialScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
 }

@@ -17,7 +17,13 @@ class SecondaryButton extends StatelessWidget {
         foregroundColor: theme.colorScheme.primary,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       ),
-      child: Text(label, style: theme.textTheme.labelLarge),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: theme.textTheme.labelLarge,
+      ),
     );
   }
 }

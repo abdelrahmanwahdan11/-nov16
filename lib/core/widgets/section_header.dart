@@ -11,13 +11,25 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(title, style: theme.textTheme.headlineMedium),
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.headlineMedium,
+          ),
+        ),
         if (actionLabel != null)
           TextButton(
             onPressed: onActionPressed,
-            child: Text(actionLabel!, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary)),
+            child: Text(
+              actionLabel!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary),
+            ),
           ),
       ],
     );

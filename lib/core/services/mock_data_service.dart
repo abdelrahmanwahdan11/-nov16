@@ -72,6 +72,52 @@ class MealPlanDay {
   }
 }
 
+class CommunityEvent {
+  const CommunityEvent({
+    required this.id,
+    required this.titleKey,
+    required this.descriptionKey,
+    required this.imageUrl,
+    required this.scheduleKey,
+    required this.locationKey,
+    required this.isVirtual,
+    required this.isLive,
+    required this.spotsRemaining,
+    required this.hostKey,
+    required this.highlightKeys,
+  });
+
+  final String id;
+  final String titleKey;
+  final String descriptionKey;
+  final String imageUrl;
+  final String scheduleKey;
+  final String locationKey;
+  final bool isVirtual;
+  final bool isLive;
+  final int spotsRemaining;
+  final String hostKey;
+  final List<String> highlightKeys;
+}
+
+class ChefStory {
+  const ChefStory({
+    required this.id,
+    required this.titleKey,
+    required this.descriptionKey,
+    required this.imageUrl,
+    required this.tagKey,
+    required this.durationMinutes,
+  });
+
+  final String id;
+  final String titleKey;
+  final String descriptionKey;
+  final String imageUrl;
+  final String tagKey;
+  final int durationMinutes;
+}
+
 class Restaurant {
   const Restaurant({
     required this.id,
@@ -312,6 +358,21 @@ class MockDataService {
     return list;
   }
 
+  Future<List<CommunityEvent>> fetchCommunityEvents({int page = 0, int pageSize = 2}) async {
+    await Future.delayed(const Duration(milliseconds: 450));
+    final start = page * pageSize;
+    if (start >= _communityEvents.length) {
+      return [];
+    }
+    final end = min(start + pageSize, _communityEvents.length);
+    return _communityEvents.sublist(start, end);
+  }
+
+  Future<List<ChefStory>> fetchChefStories() async {
+    await Future.delayed(const Duration(milliseconds: 320));
+    return _communityStories;
+  }
+
   List<FoodItem> get allFoodItems => _foodItems;
 
   List<Order> get mockOrders => List.generate(
@@ -472,3 +533,72 @@ final List<MealPlanDay> _mealPlanWeek = List.generate(_mealPlanDayNames.length, 
     isPrepDay: index == 0 || index == 3,
   );
 });
+
+final List<CommunityEvent> _communityEvents = [
+  CommunityEvent(
+    id: 'event_1',
+    titleKey: 'community_event_title_1',
+    descriptionKey: 'community_event_desc_1',
+    imageUrl: 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=900&q=80',
+    scheduleKey: 'community_event_schedule_1',
+    locationKey: 'community_event_location_virtual',
+    isVirtual: true,
+    isLive: true,
+    spotsRemaining: 18,
+    hostKey: 'community_host_laila',
+    highlightKeys: const ['community_story_tag_masterclass', 'focus_spice'],
+  ),
+  CommunityEvent(
+    id: 'event_2',
+    titleKey: 'community_event_title_2',
+    descriptionKey: 'community_event_desc_2',
+    imageUrl: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=900&q=80',
+    scheduleKey: 'community_event_schedule_2',
+    locationKey: 'community_event_location_hq',
+    isVirtual: false,
+    isLive: false,
+    spotsRemaining: 9,
+    hostKey: 'community_host_omar',
+    highlightKeys: const ['focus_greens', 'community_story_tag_seasonal'],
+  ),
+  CommunityEvent(
+    id: 'event_3',
+    titleKey: 'community_event_title_3',
+    descriptionKey: 'community_event_desc_3',
+    imageUrl: 'https://images.unsplash.com/photo-1481931098730-318b6f776db0?auto=format&fit=crop&w=900&q=80',
+    scheduleKey: 'community_event_schedule_3',
+    locationKey: 'community_event_location_market',
+    isVirtual: false,
+    isLive: false,
+    spotsRemaining: 24,
+    hostKey: 'community_host_zoe',
+    highlightKeys: const ['focus_brunch', 'community_story_tag_trend'],
+  ),
+];
+
+final List<ChefStory> _communityStories = [
+  ChefStory(
+    id: 'story_1',
+    titleKey: 'community_story_title_1',
+    descriptionKey: 'community_story_desc_1',
+    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80',
+    tagKey: 'community_story_tag_masterclass',
+    durationMinutes: 6,
+  ),
+  ChefStory(
+    id: 'story_2',
+    titleKey: 'community_story_title_2',
+    descriptionKey: 'community_story_desc_2',
+    imageUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=900&q=80',
+    tagKey: 'community_story_tag_trend',
+    durationMinutes: 4,
+  ),
+  ChefStory(
+    id: 'story_3',
+    titleKey: 'community_story_title_3',
+    descriptionKey: 'community_story_desc_3',
+    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80',
+    tagKey: 'community_story_tag_seasonal',
+    durationMinutes: 5,
+  ),
+];

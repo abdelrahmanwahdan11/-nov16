@@ -21,6 +21,7 @@ class AppState extends ChangeNotifier {
     ordersNotifier = OrdersNotifier(mock);
     profileNotifier = ProfileNotifier(mock);
     mealPlannerNotifier = MealPlannerNotifier(mock);
+    communityNotifier = CommunityNotifier(mock);
   }
 
   late final MockDataService mockDataService;
@@ -35,6 +36,7 @@ class AppState extends ChangeNotifier {
   late final OrdersNotifier ordersNotifier;
   late final ProfileNotifier profileNotifier;
   late final MealPlannerNotifier mealPlannerNotifier;
+  late final CommunityNotifier communityNotifier;
 
   final SharedPrefsService prefs = SharedPrefsService();
 
@@ -47,6 +49,7 @@ class AppState extends ChangeNotifier {
     unawaited(ordersNotifier.loadInitial());
     unawaited(profileNotifier.loadProfile());
     unawaited(mealPlannerNotifier.loadPlan());
+    unawaited(communityNotifier.loadInitial());
   }
 
   @override
@@ -62,6 +65,7 @@ class AppState extends ChangeNotifier {
     ordersNotifier.dispose();
     profileNotifier.dispose();
     mealPlannerNotifier.dispose();
+    communityNotifier.dispose();
     super.dispose();
   }
 }
@@ -546,6 +550,74 @@ class MealPlannerNotifier extends ChangeNotifier {
     activeDayIndex.value = 0;
     preparedMeals.value = <String>{};
     notifyListeners();
+  }
+}
+
+class CommunityNotifier extends ChangeNotifier {
+  CommunityNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  static const int _pageSize = 2;
+
+  final ValueNotifier<List<CommunityEvent>> events = ValueNotifier([]);
+  final ValueNotifier<List<ChefStory>> stories = ValueNotifier([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
+
+  bool _hasMore = true;
+  bool _initialized = false;
+  int _page = 0;
+
+  bool get hasMore => _hasMore;
+
+  Future<void> loadInitial({bool force = false}) async {
+    if (isLoading.value) return;
+    if (_initialized && !force) return;
+    isLoading.value = true;
+    _hasMore = true;
+    _page = 0;
+    events.value = [];
+    notifyListeners();
+    final fetched = await _dataService.fetchCommunityEvents(page: 0, pageSize: _pageSize);
+    events.value = fetched;
+    _hasMore = fetched.length == _pageSize;
+    _page = _hasMore ? 1 : 0;
+    if (stories.value.isEmpty || force) {
+      final loadedStories = await _dataService.fetchChefStories();
+      stories.value = loadedStories;
+    }
+    isLoading.value = false;
+    _initialized = true;
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadInitial(force: true);
+
+  Future<void> loadMore() async {
+    if (!_hasMore || loadingMore.value) return;
+    loadingMore.value = true;
+    final fetched = await _dataService.fetchCommunityEvents(page: _page, pageSize: _pageSize);
+    if (fetched.isEmpty) {
+      _hasMore = false;
+    } else {
+      events.value = [...events.value, ...fetched];
+      _page += 1;
+      if (fetched.length < _pageSize) {
+        _hasMore = false;
+      }
+    }
+    loadingMore.value = false;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    events.dispose();
+    stories.dispose();
+    isLoading.dispose();
+    loadingMore.dispose();
+    super.dispose();
   }
 }
 

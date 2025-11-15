@@ -13,6 +13,7 @@ import '../catalog/catalog_screen.dart';
 import '../food_details/food_details_screen.dart';
 import '../rewards/rewards_screen.dart';
 import '../meal_planner/meal_planner_screen.dart';
+import '../community/community_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.state});
@@ -52,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final loc = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final notifier = widget.state.homeFeedNotifier;
+    final community = widget.state.communityNotifier;
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -162,6 +164,59 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                   ),
+                  SectionHeader(
+                    title: loc.translate('community'),
+                    actionLabel: loc.translate('view_all'),
+                    onActionPressed: () => Navigator.of(context).pushNamed(CommunityScreen.route),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 210,
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: community.isLoading,
+                      builder: (context, loadingCommunity, __) {
+                        return ValueListenableBuilder<List<CommunityEvent>>(
+                          valueListenable: community.events,
+                          builder: (context, events, ___) {
+                            if (loadingCommunity && events.isEmpty) {
+                              return ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemBuilder: (_, __) => const SkeletonLoader(
+                                  width: 220,
+                                  height: 200,
+                                  borderRadius: 24,
+                                ),
+                                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                                itemCount: 3,
+                              );
+                            }
+                            if (events.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  loc.translate('community_empty'),
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              );
+                            }
+                            return ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: events.length,
+                              separatorBuilder: (_, __) => const SizedBox(width: 16),
+                              itemBuilder: (context, index) {
+                                final event = events[index];
+                                return _CommunityPreviewCard(
+                                  event: event,
+                                  loc: loc,
+                                  onTap: () => Navigator.of(context).pushNamed(CommunityScreen.route),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   SectionHeader(
                     title: loc.translate('categories'),
                     actionLabel: loc.translate('view_all'),
@@ -419,6 +474,106 @@ class _MealPlanPreview extends StatelessWidget {
                 },
               ),
             )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CommunityPreviewCard extends StatelessWidget {
+  const _CommunityPreviewCard({required this.event, required this.loc, required this.onTap});
+
+  final CommunityEvent event;
+  final AppLocalizations loc;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        width: 220,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: theme.colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 18,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              child: AspectRatio(
+                aspectRatio: 16 / 10,
+                child: Image.network(event.imageUrl, fit: BoxFit.cover),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          loc.translate(event.scheduleKey),
+                          style: theme.textTheme.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (event.isLive)
+                        Icon(IconlyBold.play, size: 16, color: theme.colorScheme.primary),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    loc.translate(event.titleKey),
+                    style: theme.textTheme.titleMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    loc.translate(event.descriptionKey),
+                    style: theme.textTheme.bodySmall,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      Chip(
+                        visualDensity: VisualDensity.compact,
+                        label: Text(
+                          event.isVirtual
+                              ? loc.translate('virtual_event')
+                              : loc.translate('in_person_event'),
+                        ),
+                      ),
+                      for (final key in event.highlightKeys.take(1))
+                        Chip(
+                          visualDensity: VisualDensity.compact,
+                          label: Text(loc.translate(key)),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

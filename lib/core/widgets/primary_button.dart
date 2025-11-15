@@ -30,15 +30,20 @@ class PrimaryButton extends StatelessWidget {
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
             children: [
               if (icon != null) ...[
                 Icon(icon, color: Colors.white),
                 const SizedBox(width: 12),
               ],
-              Text(
-                label,
-                style: theme.textTheme.labelLarge?.copyWith(color: Colors.white),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.labelLarge?.copyWith(color: Colors.white),
+                ),
               ),
             ],
           ),

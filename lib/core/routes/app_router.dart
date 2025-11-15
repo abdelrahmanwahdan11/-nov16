@@ -9,6 +9,7 @@ import '../../features/catalog/catalog_screen.dart';
 import '../../features/comparison/comparison_screen.dart';
 import '../../features/favorites/favorites_screen.dart';
 import '../../features/chat/chat_screen.dart';
+import '../../features/community/community_screen.dart';
 import '../../features/food_details/food_details_screen.dart';
 import '../../features/help/help_center_screen.dart';
 import '../../features/home/home_screen.dart';
@@ -79,6 +80,8 @@ class AppRouter {
           return SettingsScreen(state: state);
         case FavoritesScreen.route:
           return FavoritesScreen(state: state);
+        case CommunityScreen.route:
+          return CommunityScreen(state: state);
         case HelpCenterScreen.route:
           return HelpCenterScreen(state: state);
         case RewardsScreen.route:
