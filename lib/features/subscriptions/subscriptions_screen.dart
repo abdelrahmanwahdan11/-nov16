@@ -5,6 +5,7 @@ import '../../core/localization/app_localizations.dart';
 import '../../core/services/mock_data_service.dart';
 import '../../core/services/notifiers.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/widgets/adaptive_page.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/skeleton_loader.dart';
 
@@ -211,153 +212,146 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
           ),
         ],
       ),
-      body: AnimatedBuilder(
-        animation: merged,
-        builder: (context, _) {
-          final plans = notifier.plans.value;
-          final isLoading = notifier.isLoading.value;
-          final loadingMore = notifier.loadingMore.value;
-          final hasMore = notifier.hasMore;
-          final horizontal = context.responsiveHorizontal;
-          final vertical = context.responsiveVertical;
+      body: AdaptivePage(
+        scrollController: _controller,
+        builder: (context, data) {
+          return AnimatedBuilder(
+            animation: merged,
+            builder: (context, _) {
+              final plans = notifier.plans.value;
+              final isLoading = notifier.isLoading.value;
+              final loadingMore = notifier.loadingMore.value;
+              final hasMore = notifier.hasMore;
 
-          return RefreshIndicator(
-            onRefresh: _refresh,
-            child: CustomScrollView(
-              controller: _controller,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: context.pagePadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          loc.translate('subscriptions_title'),
-                          style: theme.textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          loc.translate('subscriptions_subtitle'),
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 20),
-                        _TagFilterRow(
-                          loc: loc,
-                          notifier: notifier,
-                          tags: mock.subscriptionTagKeys,
-                          selected: notifier.selectedTag.value,
-                        ),
-                        const SizedBox(height: 16),
-                        _DurationFilterRow(
-                          notifier: notifier,
-                          loc: loc,
-                          options: mock.subscriptionDurations,
-                          selected: notifier.selectedDuration.value,
-                        ),
-                        const SizedBox(height: 16),
-                        _PerkFilterWrap(
-                          notifier: notifier,
-                          loc: loc,
-                          perks: mock.subscriptionPerkKeys,
-                          selected: notifier.selectedPerks.value,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          loc.translate('subscriptions_refresh_hint'),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+              return RefreshIndicator(
+                onRefresh: _refresh,
+                child: CustomScrollView(
+                  controller: _controller,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    data.sliver(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            loc.translate('subscriptions_title'),
+                            style: theme.textTheme.headlineMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            loc.translate('subscriptions_subtitle'),
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 20),
+                          _TagFilterRow(
+                            loc: loc,
+                            notifier: notifier,
+                            tags: mock.subscriptionTagKeys,
+                            selected: notifier.selectedTag.value,
+                          ),
+                          const SizedBox(height: 16),
+                          _DurationFilterRow(
+                            notifier: notifier,
+                            loc: loc,
+                            options: mock.subscriptionDurations,
+                            selected: notifier.selectedDuration.value,
+                          ),
+                          const SizedBox(height: 16),
+                          _PerkFilterWrap(
+                            notifier: notifier,
+                            loc: loc,
+                            perks: mock.subscriptionPerkKeys,
+                            selected: notifier.selectedPerks.value,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            loc.translate('subscriptions_refresh_hint'),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                    if (isLoading && plans.isEmpty)
+                      data.sliver(
+                        Column(
+                          children: List.generate(
+                            3,
+                            (index) => const Padding(
+                              padding: EdgeInsets.only(bottom: 20),
+                              child: SkeletonLoader(
+                                height: 240,
+                                borderRadius: 32,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
+                      )
+                    else if (plans.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: data.wrap(
+                          Center(
+                            child: EmptyState(
+                              title: loc.translate('subscriptions_empty_title'),
+                              subtitle: loc.translate('subscriptions_empty_subtitle'),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      data.sliver(
+                        Column(
+                          children: [
+                            for (var i = 0; i < plans.length; i++)
+                              Padding(
+                                padding: EdgeInsets.only(bottom: i == plans.length - 1 ? 0 : 20),
+                                child: _SubscriptionCard(
+                                  plan: plans[i],
+                                  loc: loc,
+                                  onTap: () => _showPlanSheet(plans[i]),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    if (loadingMore)
+                      data.sliver(
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              top: 12,
+                              bottom: data.verticalPadding,
+                            ),
+                            child: CircularProgressIndicator(
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        withPadding: false,
+                      ),
+                    if (!hasMore && plans.isNotEmpty)
+                      data.sliver(
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              top: 8,
+                              bottom: data.verticalPadding,
+                            ),
+                            child: Text(
+                              loc.translate('subscriptions_refresh_hint'),
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                        withPadding: false,
+                      ),
+                  ],
                 ),
-                if (isLoading && plans.isEmpty) ...[
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontal),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index.isOdd) {
-                            return const SizedBox(height: 20);
-                          }
-                          return const SkeletonLoader(
-                            height: 240,
-                            borderRadius: 32,
-                          );
-                        },
-                        childCount: 3 * 2 - 1,
-                      ),
-                    ),
-                  ),
-                ] else if (plans.isEmpty) ...[
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: horizontal),
-                      child: Center(
-                        child: EmptyState(
-                          title: loc.translate('subscriptions_empty_title'),
-                          subtitle: loc.translate('subscriptions_empty_subtitle'),
-                        ),
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  SliverPadding(
-                    padding: EdgeInsets.only(
-                      left: horizontal,
-                      right: horizontal,
-                      bottom: vertical,
-                    ),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index.isOdd) {
-                            return const SizedBox(height: 20);
-                          }
-                          final plan = plans[index ~/ 2];
-                          return _SubscriptionCard(
-                            plan: plan,
-                            loc: loc,
-                            onTap: () => _showPlanSheet(plan),
-                          );
-                        },
-                        childCount: plans.isEmpty ? 0 : plans.length * 2 - 1,
-                      ),
-                    ),
-                  ),
-                ],
-                if (loadingMore) ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: vertical, top: 12),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-                if (!hasMore && plans.isNotEmpty) ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: vertical, top: 8),
-                      child: Center(
-                        child: Text(
-                          loc.translate('subscriptions_refresh_hint'),
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              );
+            },
           );
         },
       ),

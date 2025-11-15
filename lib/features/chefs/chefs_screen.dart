@@ -5,6 +5,7 @@ import '../../core/localization/app_localizations.dart';
 import '../../core/services/mock_data_service.dart';
 import '../../core/services/notifiers.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/widgets/adaptive_page.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/secondary_button.dart';
@@ -225,149 +226,138 @@ class _ChefsScreenState extends State<ChefsScreen> {
       appBar: AppBar(
         title: Text(loc.translate('chefs')),
       ),
-      body: AnimatedBuilder(
-        animation: merged,
-        builder: (context, _) {
-          final profiles = notifier.profiles.value;
-          final isLoading = notifier.isLoading.value;
-          final loadingMore = notifier.loadingMore.value;
-          final hasMore = notifier.hasMore;
-          final horizontal = context.responsiveHorizontal;
-          final vertical = context.responsiveVertical;
+      body: AdaptivePage(
+        scrollController: _controller,
+        builder: (context, data) {
+          return AnimatedBuilder(
+            animation: merged,
+            builder: (context, _) {
+              final profiles = notifier.profiles.value;
+              final isLoading = notifier.isLoading.value;
+              final loadingMore = notifier.loadingMore.value;
+              final hasMore = notifier.hasMore;
 
-          return RefreshIndicator(
-            onRefresh: _refresh,
-            child: CustomScrollView(
-              controller: _controller,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: context.pagePadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          loc.translate('chefs_title'),
-                          style: theme.textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          loc.translate('chefs_subtitle'),
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 24),
-                        _CuisineFilterWrap(
-                          notifier: notifier,
-                          loc: loc,
-                          dataService: mock,
-                        ),
-                        const SizedBox(height: 16),
-                        _SpecialtyFilterWrap(
-                          notifier: notifier,
-                          loc: loc,
-                          dataService: mock,
-                        ),
-                        const SizedBox(height: 16),
-                        _ExperienceFilterRow(
-                          notifier: notifier,
-                          loc: loc,
-                          dataService: mock,
-                        ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: TextButton.icon(
-                            onPressed: notifier.clearFilters,
-                            icon: const Icon(Icons.refresh),
-                            label: Text(loc.translate('chefs_clear_filters')),
+              return RefreshIndicator(
+                onRefresh: _refresh,
+                child: CustomScrollView(
+                  controller: _controller,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    data.sliver(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            loc.translate('chefs_title'),
+                            style: theme.textTheme.headlineMedium,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (isLoading && profiles.isEmpty) ...[
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontal),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => const Padding(
-                          padding: EdgeInsets.only(bottom: 20),
-                          child: SkeletonLoader(
-                            height: 200,
-                            borderRadius: 32,
-                            width: double.infinity,
+                          const SizedBox(height: 8),
+                          Text(
+                            loc.translate('chefs_subtitle'),
+                            style: theme.textTheme.bodyMedium,
                           ),
-                        ),
-                        childCount: 3,
+                          const SizedBox(height: 24),
+                          _CuisineFilterWrap(
+                            notifier: notifier,
+                            loc: loc,
+                            dataService: mock,
+                          ),
+                          const SizedBox(height: 16),
+                          _SpecialtyFilterWrap(
+                            notifier: notifier,
+                            loc: loc,
+                            dataService: mock,
+                          ),
+                          const SizedBox(height: 16),
+                          _ExperienceFilterRow(
+                            notifier: notifier,
+                            loc: loc,
+                            dataService: mock,
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: TextButton.icon(
+                              onPressed: notifier.clearFilters,
+                              icon: const Icon(Icons.refresh),
+                              label: Text(loc.translate('chefs_clear_filters')),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ] else if (profiles.isEmpty) ...[
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: horizontal),
-                      child: Center(
-                        child: EmptyState(
+                    if (isLoading && profiles.isEmpty)
+                      data.sliver(
+                        Column(
+                          children: List.generate(
+                            3,
+                            (index) => const Padding(
+                              padding: EdgeInsets.only(bottom: 20),
+                              child: SkeletonLoader(
+                                height: 200,
+                                borderRadius: 32,
+                                width: double.infinity,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (profiles.isEmpty)
+                      data.sliver(
+                        EmptyState(
                           title: loc.translate('chefs_empty_title'),
                           subtitle: loc.translate('chefs_empty_subtitle'),
                         ),
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  SliverPadding(
-                    padding: EdgeInsets.only(
-                      left: horizontal,
-                      right: horizontal,
-                      bottom: vertical,
-                    ),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final chef = profiles[index];
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              bottom: index == profiles.length - 1 ? 0 : 20,
-                            ),
-                            child: _ChefCard(
-                              chef: chef,
-                              loc: loc,
-                              theme: theme,
-                              onTap: () => _showChefDetails(chef),
-                            ),
-                          );
-                        },
-                        childCount: profiles.length,
-                      ),
-                    ),
-                  ),
-                ],
-                if (loadingMore) ...[
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  ),
-                ],
-                if (!hasMore && profiles.isNotEmpty) ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: vertical, top: 8),
-                      child: Center(
-                        child: Text(
-                          loc.translate('chefs_end_message'),
-                          style: theme.textTheme.bodyMedium,
+                      )
+                    else
+                      data.sliver(
+                        Column(
+                          children: [
+                            for (var i = 0; i < profiles.length; i++)
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: i == profiles.length - 1 ? 0 : 20,
+                                ),
+                                child: _ChefCard(
+                                  chef: profiles[i],
+                                  loc: loc,
+                                  theme: theme,
+                                  onTap: () => _showChefDetails(profiles[i]),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+                    if (loadingMore)
+                      data.sliver(
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                        withPadding: false,
+                      ),
+                    if (!hasMore && profiles.isNotEmpty)
+                      data.sliver(
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              top: 8,
+                              bottom: data.verticalPadding,
+                            ),
+                            child: Text(
+                              loc.translate('chefs_end_message'),
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                        withPadding: false,
+                      ),
+                  ],
+                ),
+              );
+            },
           );
         },
       ),

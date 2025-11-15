@@ -4,6 +4,7 @@ import 'package:iconly/iconly.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/services/mock_data_service.dart';
 import '../../core/services/notifiers.dart';
+import '../../core/widgets/adaptive_page.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/skeleton_loader.dart';
 
@@ -142,99 +143,138 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           const SizedBox(width: 12),
         ],
       ),
-      body: AnimatedBuilder(
-        animation: _notifier,
-        builder: (context, _) {
-          final items = _notifier.notifications.value;
-          final isLoading = _notifier.isLoading.value;
-          final loadingMore = _notifier.loadingMore.value;
-          final hasMore = _notifier.hasMore;
+      body: AdaptivePage(
+        scrollController: _controller,
+        builder: (context, data) {
+          return AnimatedBuilder(
+            animation: _notifier,
+            builder: (context, _) {
+              final items = _notifier.notifications.value;
+              final isLoading = _notifier.isLoading.value;
+              final loadingMore = _notifier.loadingMore.value;
+              final hasMore = _notifier.hasMore;
+              final padding = EdgeInsets.symmetric(
+                horizontal: data.horizontalPadding,
+                vertical: data.verticalPadding,
+              );
 
-          if (isLoading && items.isEmpty) {
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              children: const [
-                SkeletonLoader(height: 120, borderRadius: 28),
-                SizedBox(height: 18),
-                SkeletonLoader(height: 120, borderRadius: 28),
-                SizedBox(height: 18),
-                SkeletonLoader(height: 120, borderRadius: 28),
-              ],
-            );
-          }
+              if (isLoading && items.isEmpty) {
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  padding: padding,
+                  children: [
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: data.maxContentWidth),
+                        child: Column(
+                          children: const [
+                            SkeletonLoader(height: 120, borderRadius: 28),
+                            SizedBox(height: 18),
+                            SkeletonLoader(height: 120, borderRadius: 28),
+                            SizedBox(height: 18),
+                            SkeletonLoader(height: 120, borderRadius: 28),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
 
-          if (items.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: _handleRefresh,
-              child: ListView(
-                controller: _controller,
-                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 120),
-                children: [
-                  EmptyState(
-                    title: loc.translate('notifications_empty_title'),
-                    subtitle: loc.translate('notifications_empty_subtitle'),
+              if (items.isEmpty) {
+                return RefreshIndicator(
+                  onRefresh: _handleRefresh,
+                  child: ListView(
+                    controller: _controller,
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    padding: padding.copyWith(top: data.verticalPadding * 6),
+                    children: [
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: data.maxContentWidth * 0.8),
+                          child: EmptyState(
+                            title: loc.translate('notifications_empty_title'),
+                            subtitle: loc.translate('notifications_empty_subtitle'),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }
+                );
+              }
 
-          return RefreshIndicator(
-            onRefresh: _handleRefresh,
-            child: ListView.builder(
-              controller: _controller,
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-              padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.of(context).padding.bottom),
-              itemCount: items.length + 1,
-              itemBuilder: (context, index) {
-                if (index == items.length) {
-                  if (loadingMore) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Center(
-                        child: CircularProgressIndicator(color: theme.colorScheme.primary),
-                      ),
-                    );
-                  }
-                  if (!hasMore) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Text(
-                        loc.translate('no_more_results'),
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    );
-                  }
-                  return const SizedBox(height: 24);
-                }
+              final bottomPadding = data.verticalPadding + MediaQuery.of(context).padding.bottom;
 
-                final notification = items[index];
-                return Padding(
-                  padding: EdgeInsets.only(bottom: index == items.length - 1 ? 0 : 16),
-                  child: _NotificationTile(
-                    notification: notification,
-                    loc: loc,
-                    onOpen: () => _openDetails(notification),
-                    onMarkRead: () {
-                      final wasUnread = !notification.isRead;
-                      _notifier.markAsRead(notification.id);
-                      if (wasUnread) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(loc.translate('notification_marked_read')),
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 2),
+              return RefreshIndicator(
+                onRefresh: _handleRefresh,
+                child: ListView.builder(
+                  controller: _controller,
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  padding: padding.copyWith(bottom: bottomPadding),
+                  itemCount: items.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == items.length) {
+                      if (loadingMore) {
+                        return Align(
+                          alignment: Alignment.center,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: data.verticalPadding),
+                            child: CircularProgressIndicator(color: theme.colorScheme.primary),
                           ),
                         );
                       }
-                    },
-                  ),
-                );
-              },
-            ),
+                      if (!hasMore) {
+                        return Align(
+                          alignment: Alignment.center,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: data.verticalPadding / 1.5),
+                            child: Text(
+                              loc.translate('no_more_results'),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ),
+                        );
+                      }
+                      return SizedBox(height: data.verticalPadding);
+                    }
+
+                    final notification = items[index];
+                    return Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: data.maxContentWidth),
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            bottom: index == items.length - 1 ? 0 : 16,
+                          ),
+                          child: _NotificationTile(
+                            notification: notification,
+                            loc: loc,
+                            onOpen: () => _openDetails(notification),
+                            onMarkRead: () {
+                              final wasUnread = !notification.isRead;
+                              _notifier.markAsRead(notification.id);
+                              if (wasUnread) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(loc.translate('notification_marked_read')),
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           );
         },
       ),

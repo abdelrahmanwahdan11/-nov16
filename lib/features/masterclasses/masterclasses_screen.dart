@@ -4,6 +4,7 @@ import 'package:iconly/iconly.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/services/mock_data_service.dart';
 import '../../core/services/notifiers.dart';
+import '../../core/widgets/adaptive_page.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/skeleton_loader.dart';
@@ -301,33 +302,33 @@ class _MasterclassesScreenState extends State<MasterclassesScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refresh,
-          child: AnimatedBuilder(
-            animation: Listenable.merge([
-              notifier,
-              notifier.classes,
-              notifier.isLoading,
-              notifier.loadingMore,
-              notifier.selectedLevel,
-              notifier.selectedCuisine,
-              notifier.selectedFormat,
-            ]),
-            builder: (context, _) {
-              final items = notifier.classes.value;
-              final isLoading = notifier.isLoading.value;
+      body: AdaptivePage(
+        scrollController: _controller,
+        builder: (context, data) {
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: AnimatedBuilder(
+              animation: Listenable.merge([
+                notifier,
+                notifier.classes,
+                notifier.isLoading,
+                notifier.loadingMore,
+                notifier.selectedLevel,
+                notifier.selectedCuisine,
+                notifier.selectedFormat,
+              ]),
+              builder: (context, _) {
+                final items = notifier.classes.value;
+                final isLoading = notifier.isLoading.value;
 
-              return CustomScrollView(
-                controller: _controller,
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-                      child: Column(
+                return CustomScrollView(
+                  controller: _controller,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  slivers: [
+                    data.sliver(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
@@ -343,18 +344,14 @@ class _MasterclassesScreenState extends State<MasterclassesScreen> {
                           Text(
                             loc.translate('masterclasses_home_subtitle'),
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.textTheme.bodySmall?.color
-                                  ?.withOpacity(0.65),
+                              color: theme.textTheme.bodySmall?.color?.withOpacity(0.65),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
+                    data.sliver(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _FilterRow(
@@ -366,8 +363,7 @@ class _MasterclassesScreenState extends State<MasterclassesScreen> {
                           ),
                           const SizedBox(height: 12),
                           _FilterRow(
-                            label:
-                                loc.translate('masterclasses_filter_all_cuisines'),
+                            label: loc.translate('masterclasses_filter_all_cuisines'),
                             keys: notifier.cuisineKeys,
                             selected: notifier.selectedCuisine.value,
                             onSelected: notifier.selectCuisine,
@@ -375,8 +371,7 @@ class _MasterclassesScreenState extends State<MasterclassesScreen> {
                           ),
                           const SizedBox(height: 12),
                           _FilterRow(
-                            label:
-                                loc.translate('masterclasses_filter_all_formats'),
+                            label: loc.translate('masterclasses_filter_all_formats'),
                             keys: notifier.formatKeys,
                             selected: notifier.selectedFormat.value,
                             onSelected: notifier.selectFormat,
@@ -385,93 +380,82 @@ class _MasterclassesScreenState extends State<MasterclassesScreen> {
                         ],
                       ),
                     ),
-                  ),
-                  if (isLoading && items.isEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-                        child: Column(
+                    if (isLoading && items.isEmpty)
+                      data.sliver(
+                        Column(
                           children: const [
                             SkeletonLoader(height: 220, borderRadius: 28),
                             SizedBox(height: 16),
                             SkeletonLoader(height: 220, borderRadius: 28),
                           ],
                         ),
-                      ),
-                    )
-                  else if (items.isEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: EmptyState(
+                      )
+                    else if (items.isEmpty)
+                      data.sliver(
+                        EmptyState(
                           title: loc.translate('masterclasses_empty_title'),
-                          subtitle:
-                              loc.translate('masterclasses_empty_subtitle'),
+                          subtitle: loc.translate('masterclasses_empty_subtitle'),
+                        ),
+                      )
+                    else
+                      data.sliver(
+                        Column(
+                          children: [
+                            for (var i = 0; i < items.length; i++)
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  top: i == 0 ? 24 : 12,
+                                  bottom: 12,
+                                ),
+                                child: _MasterclassCard(
+                                  masterclass: items[i],
+                                  loc: loc,
+                                  onTap: () => _openMasterclassSheet(items[i], loc),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                    )
-                  else
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final masterclass = items[index];
-                          return Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              24,
-                              index == 0 ? 24 : 12,
-                              24,
-                              12,
-                            ),
-                            child: _MasterclassCard(
-                              masterclass: masterclass,
-                              loc: loc,
-                              onTap: () => _openMasterclassSheet(masterclass, loc),
-                            ),
-                          );
-                        },
-                        childCount: items.length,
-                      ),
-                    ),
-                  SliverToBoxAdapter(
-                    child: AnimatedOpacity(
-                      opacity:
-                          notifier.loadingMore.value && items.isNotEmpty ? 1 : 0,
-                      duration: const Duration(milliseconds: 240),
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 32, top: 16),
-                        child: Center(
-                          child: SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              valueColor: AlwaysStoppedAnimation(
-                                theme.colorScheme.primary,
+                    data.sliver(
+                      AnimatedOpacity(
+                        opacity: notifier.loadingMore.value && items.isNotEmpty ? 1 : 0,
+                        duration: const Duration(milliseconds: 240),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 32, top: 16),
+                          child: Center(
+                            child: SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                valueColor: AlwaysStoppedAnimation(
+                                  theme.colorScheme.primary,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
+                      withPadding: false,
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                      child: Text(
-                        loc.translate('masterclasses_end_message'),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color:
-                              theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                    data.sliver(
+                      Padding(
+                        padding: EdgeInsets.only(bottom: data.verticalPadding + 12),
+                        child: Text(
+                          loc.translate('masterclasses_end_message'),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+                  ],
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
