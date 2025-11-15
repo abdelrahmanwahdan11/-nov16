@@ -27,6 +27,7 @@ import '../../features/search/search_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/shell_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
+import '../../features/reservations/reservations_screen.dart';
 import '../services/mock_data_service.dart';
 import '../services/notifiers.dart';
 
@@ -85,6 +86,8 @@ class AppRouter {
           return CommunityScreen(state: state);
         case NotificationsScreen.route:
           return NotificationsScreen(state: state);
+        case ReservationsScreen.route:
+          return ReservationsScreen(state: state);
         case HelpCenterScreen.route:
           return HelpCenterScreen(state: state);
         case RewardsScreen.route:

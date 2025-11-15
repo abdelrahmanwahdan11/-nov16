@@ -15,6 +15,8 @@ import '../rewards/rewards_screen.dart';
 import '../meal_planner/meal_planner_screen.dart';
 import '../community/community_screen.dart';
 import '../notifications/notifications_screen.dart';
+import '../reservations/reservations_screen.dart';
+import '../reservations/reservation_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.state});
@@ -175,6 +177,51 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
+                        ],
+                      );
+                    },
+                  ),
+                  ValueListenableBuilder<List<Reservation>>(
+                    valueListenable: widget.state.reservationsNotifier.upcoming,
+                    builder: (context, reservations, _) {
+                      final reservationsNotifier = widget.state.reservationsNotifier;
+                      if (reservations.isEmpty && reservationsNotifier.isLoading) {
+                        return Column(
+                          children: const [
+                            SkeletonLoader(height: 160, borderRadius: 28),
+                            SizedBox(height: 24),
+                          ],
+                        );
+                      }
+                      final Restaurant? highlightedRestaurant =
+                          reservations.isNotEmpty ? widget.state.mockDataService.getRestaurantById(reservations.first.restaurantId) : null;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(
+                            title: loc.translate('reservations'),
+                            actionLabel: loc.translate('reservation_manage'),
+                            onActionTap: () => Navigator.of(context).pushNamed(ReservationsScreen.route),
+                          ),
+                          const SizedBox(height: 12),
+                          if (reservations.isEmpty)
+                            _ReservationHomeEmptyCard(
+                              loc: loc,
+                              onPlan: () => showReservationSheet(context: context, state: widget.state),
+                            )
+                          else if (highlightedRestaurant != null)
+                            _ReservationHomeCard(
+                              reservation: reservations.first,
+                              restaurant: highlightedRestaurant,
+                              loc: loc,
+                              onManage: () => Navigator.of(context).pushNamed(ReservationsScreen.route),
+                              onPlan: () => showReservationSheet(
+                                context: context,
+                                state: widget.state,
+                                preselected: highlightedRestaurant,
+                              ),
+                            ),
+                          const SizedBox(height: 24),
                         ],
                       );
                     },
@@ -352,6 +399,136 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           )
+        ],
+      ),
+    );
+  }
+}
+
+class _ReservationHomeEmptyCard extends StatelessWidget {
+  const _ReservationHomeEmptyCard({required this.loc, required this.onPlan});
+
+  final AppLocalizations loc;
+  final VoidCallback onPlan;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        color: theme.cardColor,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 18, offset: const Offset(0, 10)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(loc.translate('reservation_home_title'), style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            loc.translate('reservation_home_subtitle'),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: onPlan,
+            icon: const Icon(IconlyLight.calendar),
+            label: Text(loc.translate('reservation_home_cta')),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReservationHomeCard extends StatelessWidget {
+  const _ReservationHomeCard({
+    required this.reservation,
+    required this.restaurant,
+    required this.loc,
+    required this.onManage,
+    required this.onPlan,
+  });
+
+  final Reservation reservation;
+  final Restaurant restaurant;
+  final AppLocalizations loc;
+  final VoidCallback onManage;
+  final VoidCallback onPlan;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final material = MaterialLocalizations.of(context);
+    final dateLabel = material.formatMediumDate(reservation.dateTime);
+    final timeLabel = material.formatTimeOfDay(TimeOfDay.fromDateTime(reservation.dateTime));
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        color: theme.colorScheme.surface,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 22, offset: const Offset(0, 12)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(restaurant.imageUrl, width: 80, height: 80, fit: BoxFit.cover),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(restaurant.name, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Text('$dateLabel • $timeLabel', style: theme.textTheme.bodyMedium),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${reservation.guests} ${loc.translate('reservation_guests')}',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.textTheme.bodySmall?.color?.withOpacity(0.8)),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      loc.translate(reservation.occasionKey),
+                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary),
+                    ),
+                  ],
+                ),
+              ),
+              Chip(label: Text(loc.translate(reservation.statusKey))),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: onManage,
+                  child: Text(loc.translate('reservation_manage')),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onPlan,
+                  child: Text(loc.translate('book_table')),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

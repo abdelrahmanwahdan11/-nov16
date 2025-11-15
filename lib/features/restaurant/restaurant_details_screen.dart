@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:iconly/iconly.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/services/mock_data_service.dart';
 import '../../core/services/notifiers.dart';
 import '../../core/widgets/rating_stars.dart';
+import '../reservations/reservation_sheet.dart';
 
 class RestaurantDetailsScreen extends StatelessWidget {
   const RestaurantDetailsScreen({super.key, required this.state, required this.restaurant});
@@ -14,6 +16,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -62,6 +65,19 @@ class RestaurantDetailsScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Chip(label: Text('${restaurant.deliveryFee.toStringAsFixed(2)} delivery')),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => showReservationSheet(
+                        context: context,
+                        state: state,
+                        preselected: restaurant,
+                      ),
+                      icon: const Icon(IconlyLight.calendar),
+                      label: Text(loc.translate('book_table')),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Text('Menu', style: Theme.of(context).textTheme.headlineMedium),

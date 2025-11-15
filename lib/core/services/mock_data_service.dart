@@ -150,6 +150,60 @@ class AppNotification {
   }
 }
 
+class ReservationSlot {
+  const ReservationSlot({
+    required this.id,
+    required this.restaurantId,
+    required this.dateTime,
+    required this.capacity,
+  });
+
+  final String id;
+  final String restaurantId;
+  final DateTime dateTime;
+  final int capacity;
+}
+
+class Reservation {
+  const Reservation({
+    required this.id,
+    required this.restaurantId,
+    required this.dateTime,
+    required this.guests,
+    required this.occasionKey,
+    required this.statusKey,
+    this.note,
+  });
+
+  final String id;
+  final String restaurantId;
+  final DateTime dateTime;
+  final int guests;
+  final String occasionKey;
+  final String statusKey;
+  final String? note;
+
+  Reservation copyWith({
+    String? id,
+    String? restaurantId,
+    DateTime? dateTime,
+    int? guests,
+    String? occasionKey,
+    String? statusKey,
+    String? note,
+  }) {
+    return Reservation(
+      id: id ?? this.id,
+      restaurantId: restaurantId ?? this.restaurantId,
+      dateTime: dateTime ?? this.dateTime,
+      guests: guests ?? this.guests,
+      occasionKey: occasionKey ?? this.occasionKey,
+      statusKey: statusKey ?? this.statusKey,
+      note: note ?? this.note,
+    );
+  }
+}
+
 class Restaurant {
   const Restaurant({
     required this.id,
@@ -330,9 +384,103 @@ class UserProfile {
 }
 
 class MockDataService {
+  MockDataService() {
+    _restaurants = List.generate(
+      10,
+      (index) => Restaurant(
+        id: 'rest_$index',
+        name: 'Spicy Heaven ${index + 1}',
+        imageUrl: 'https://images.unsplash.com/photo-1555992336-cbf3cd4f1b89',
+        rating: 4.2 + (index % 3) * 0.3,
+        category: mockCategories[index % mockCategories.length].name,
+        deliveryFee: 2.99 + index,
+        deliveryTime: 20 + index * 3,
+        menu: _foodItems.sublist(0, 6),
+      ),
+    );
+
+    DateTime combine(DateTime base, int daysFromNow, int hour, int minute) {
+      final shifted = base.add(Duration(days: daysFromNow));
+      return DateTime(shifted.year, shifted.month, shifted.day, hour, minute);
+    }
+
+    final now = DateTime.now();
+    _reservationSlots = [
+      ReservationSlot(
+        id: 'slot_1',
+        restaurantId: _restaurants[0].id,
+        dateTime: combine(now, 1, 18, 30),
+        capacity: 2,
+      ),
+      ReservationSlot(
+        id: 'slot_2',
+        restaurantId: _restaurants[0].id,
+        dateTime: combine(now, 1, 20, 0),
+        capacity: 4,
+      ),
+      ReservationSlot(
+        id: 'slot_3',
+        restaurantId: _restaurants[1].id,
+        dateTime: combine(now, 2, 19, 15),
+        capacity: 2,
+      ),
+      ReservationSlot(
+        id: 'slot_4',
+        restaurantId: _restaurants[2].id,
+        dateTime: combine(now, 3, 17, 45),
+        capacity: 3,
+      ),
+      ReservationSlot(
+        id: 'slot_5',
+        restaurantId: _restaurants[2].id,
+        dateTime: combine(now, 3, 20, 15),
+        capacity: 4,
+      ),
+      ReservationSlot(
+        id: 'slot_6',
+        restaurantId: _restaurants[3].id,
+        dateTime: combine(now, 4, 18, 0),
+        capacity: 5,
+      ),
+    ];
+
+    _reservations = [
+      Reservation(
+        id: 'reservation_1',
+        restaurantId: _restaurants[0].id,
+        dateTime: combine(now, 1, 19, 30),
+        guests: 2,
+        occasionKey: 'reservation_occasion_date',
+        statusKey: 'reservation_status_confirmed',
+        note: 'Window seating if available',
+      ),
+      Reservation(
+        id: 'reservation_2',
+        restaurantId: _restaurants[1].id,
+        dateTime: combine(now, -2, 18, 0),
+        guests: 4,
+        occasionKey: 'reservation_occasion_celebration',
+        statusKey: 'reservation_status_completed',
+        note: 'Birthday dessert surprise',
+      ),
+      Reservation(
+        id: 'reservation_3',
+        restaurantId: _restaurants[3].id,
+        dateTime: combine(now, 0, 13, 0),
+        guests: 3,
+        occasionKey: 'reservation_occasion_business',
+        statusKey: 'reservation_status_confirmed',
+      ),
+    ];
+  }
+
   static const int popularPageSize = 6;
   static const int catalogPageSize = 8;
   static const int notificationsPageSize = 4;
+
+  late final List<Restaurant> _restaurants;
+  late final List<ReservationSlot> _reservationSlots;
+  late final List<Reservation> _reservations;
 
   final List<Category> mockCategories = [
     const Category(
@@ -429,19 +577,58 @@ class MockDataService {
         ),
       );
 
-  List<Restaurant> get restaurants => List.generate(
-        10,
-        (index) => Restaurant(
-          id: 'rest_$index',
-          name: 'Spicy Heaven ${index + 1}',
-          imageUrl: 'https://images.unsplash.com/photo-1555992336-cbf3cd4f1b89',
-          rating: 4.2 + (index % 3) * 0.3,
-          category: mockCategories[index % mockCategories.length].name,
-          deliveryFee: 2.99 + index,
-          deliveryTime: 20 + index * 3,
-          menu: _foodItems.sublist(0, 6),
-        ),
-      );
+  List<Restaurant> get restaurants => _restaurants;
+
+  Restaurant getRestaurantById(String id) {
+    return _restaurants.firstWhere((restaurant) => restaurant.id == id, orElse: () => _restaurants.first);
+  }
+
+  Future<List<Reservation>> loadReservations() async {
+    await Future.delayed(const Duration(milliseconds: 320));
+    return _reservations.map((reservation) => reservation).toList();
+  }
+
+  Future<List<ReservationSlot>> fetchReservationSlots(String restaurantId) async {
+    await Future.delayed(const Duration(milliseconds: 260));
+    final now = DateTime.now().subtract(const Duration(hours: 1));
+    final slots = _reservationSlots
+        .where((slot) => slot.restaurantId == restaurantId && slot.dateTime.isAfter(now))
+        .toList()
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    return slots;
+  }
+
+  Future<Reservation> createReservation({
+    required String restaurantId,
+    required DateTime dateTime,
+    required int guests,
+    required String occasionKey,
+    String? note,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 280));
+    final reservation = Reservation(
+      id: 'reservation_${DateTime.now().millisecondsSinceEpoch}',
+      restaurantId: restaurantId,
+      dateTime: dateTime,
+      guests: guests,
+      occasionKey: occasionKey,
+      statusKey: 'reservation_status_confirmed',
+      note: note?.isEmpty == true ? null : note,
+    );
+    _reservations.insert(0, reservation);
+    return reservation;
+  }
+
+  Future<Reservation?> updateReservationStatus(String id, String statusKey) async {
+    final index = _reservations.indexWhere((element) => element.id == id);
+    if (index == -1) {
+      return null;
+    }
+    final updated = _reservations[index].copyWith(statusKey: statusKey);
+    _reservations[index] = updated;
+    await Future.delayed(const Duration(milliseconds: 220));
+    return updated;
+  }
 
   List<FoodItem> get _foodItems => _baseFoodItems;
 

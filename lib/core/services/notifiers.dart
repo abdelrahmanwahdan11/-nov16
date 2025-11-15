@@ -23,6 +23,7 @@ class AppState extends ChangeNotifier {
     mealPlannerNotifier = MealPlannerNotifier(mock);
     communityNotifier = CommunityNotifier(mock);
     notificationsNotifier = NotificationsNotifier(mock);
+    reservationsNotifier = ReservationsNotifier(mock);
   }
 
   late final MockDataService mockDataService;
@@ -39,6 +40,7 @@ class AppState extends ChangeNotifier {
   late final MealPlannerNotifier mealPlannerNotifier;
   late final CommunityNotifier communityNotifier;
   late final NotificationsNotifier notificationsNotifier;
+  late final ReservationsNotifier reservationsNotifier;
 
   final SharedPrefsService prefs = SharedPrefsService();
 
@@ -53,6 +55,7 @@ class AppState extends ChangeNotifier {
     unawaited(mealPlannerNotifier.loadPlan());
     unawaited(communityNotifier.loadInitial());
     unawaited(notificationsNotifier.loadInitial());
+    unawaited(reservationsNotifier.loadInitial());
   }
 
   @override
@@ -70,6 +73,7 @@ class AppState extends ChangeNotifier {
     mealPlannerNotifier.dispose();
     communityNotifier.dispose();
     notificationsNotifier.dispose();
+    reservationsNotifier.dispose();
     super.dispose();
   }
 }
@@ -651,6 +655,111 @@ class NotificationsNotifier extends ChangeNotifier {
     isLoading.dispose();
     loadingMore.dispose();
     unreadCount.dispose();
+    super.dispose();
+  }
+}
+
+class ReservationsNotifier extends ChangeNotifier {
+  ReservationsNotifier(this._dataService);
+
+  final MockDataService _dataService;
+  final ValueNotifier<List<Reservation>> upcoming = ValueNotifier([]);
+  final ValueNotifier<List<Reservation>> history = ValueNotifier([]);
+  final ValueNotifier<List<ReservationSlot>> availableSlots = ValueNotifier([]);
+  final ValueNotifier<bool> isLoadingSlots = ValueNotifier(false);
+  final ValueNotifier<bool> isBooking = ValueNotifier(false);
+  bool _isLoading = false;
+
+  bool get isLoading => _isLoading;
+
+  Future<void> loadInitial() async {
+    if (_isLoading) return;
+    _isLoading = true;
+    notifyListeners();
+    final reservations = await _dataService.loadReservations();
+    _assign(reservations);
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> refresh() async {
+    final reservations = await _dataService.loadReservations();
+    _assign(reservations);
+  }
+
+  Future<void> loadSlotsForRestaurant(String restaurantId) async {
+    isLoadingSlots.value = true;
+    availableSlots.value = [];
+    final slots = await _dataService.fetchReservationSlots(restaurantId);
+    availableSlots.value = slots;
+    isLoadingSlots.value = false;
+  }
+
+  void clearSlots() {
+    availableSlots.value = [];
+    isLoadingSlots.value = false;
+  }
+
+  Future<Reservation?> bookReservation({
+    required String restaurantId,
+    required DateTime dateTime,
+    required int guests,
+    required String occasionKey,
+    String? note,
+  }) async {
+    if (isBooking.value) return null;
+    isBooking.value = true;
+    try {
+      final reservation = await _dataService.createReservation(
+        restaurantId: restaurantId,
+        dateTime: dateTime,
+        guests: guests,
+        occasionKey: occasionKey,
+        note: note,
+      );
+      final reservations = await _dataService.loadReservations();
+      _assign(reservations);
+      return reservation;
+    } finally {
+      isBooking.value = false;
+    }
+  }
+
+  Future<bool> updateStatus(String id, String statusKey) async {
+    final updated = await _dataService.updateReservationStatus(id, statusKey);
+    if (updated == null) {
+      return false;
+    }
+    final reservations = await _dataService.loadReservations();
+    _assign(reservations);
+    return true;
+  }
+
+  Restaurant restaurantFor(String id) {
+    return _dataService.getRestaurantById(id);
+  }
+
+  void _assign(List<Reservation> reservations) {
+    final now = DateTime.now().subtract(const Duration(hours: 2));
+    final upcomingReservations = reservations
+        .where((reservation) => reservation.dateTime.isAfter(now))
+        .toList()
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    final historyReservations = reservations
+        .where((reservation) => reservation.dateTime.isBefore(now))
+        .toList()
+      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    upcoming.value = upcomingReservations;
+    history.value = historyReservations;
+  }
+
+  @override
+  void dispose() {
+    upcoming.dispose();
+    history.dispose();
+    availableSlots.dispose();
+    isLoadingSlots.dispose();
+    isBooking.dispose();
     super.dispose();
   }
 }
