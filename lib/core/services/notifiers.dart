@@ -20,6 +20,7 @@ class AppState extends ChangeNotifier {
     favoritesNotifier = FavoritesNotifier();
     ordersNotifier = OrdersNotifier(mock);
     profileNotifier = ProfileNotifier(mock);
+    mealPlannerNotifier = MealPlannerNotifier(mock);
   }
 
   late final MockDataService mockDataService;
@@ -33,6 +34,7 @@ class AppState extends ChangeNotifier {
   late final FavoritesNotifier favoritesNotifier;
   late final OrdersNotifier ordersNotifier;
   late final ProfileNotifier profileNotifier;
+  late final MealPlannerNotifier mealPlannerNotifier;
 
   final SharedPrefsService prefs = SharedPrefsService();
 
@@ -44,6 +46,7 @@ class AppState extends ChangeNotifier {
     unawaited(catalogNotifier.loadInitial());
     unawaited(ordersNotifier.loadInitial());
     unawaited(profileNotifier.loadProfile());
+    unawaited(mealPlannerNotifier.loadPlan());
   }
 
   @override
@@ -58,6 +61,7 @@ class AppState extends ChangeNotifier {
     favoritesNotifier.dispose();
     ordersNotifier.dispose();
     profileNotifier.dispose();
+    mealPlannerNotifier.dispose();
     super.dispose();
   }
 }
@@ -477,6 +481,71 @@ class OrdersNotifier extends ChangeNotifier {
     currentOrders.dispose();
     historyOrders.dispose();
     super.dispose();
+  }
+}
+
+class MealPlannerNotifier extends ChangeNotifier {
+  MealPlannerNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  final ValueNotifier<List<MealPlanDay>> days = ValueNotifier([]);
+  final ValueNotifier<int> activeDayIndex = ValueNotifier(0);
+  final ValueNotifier<Set<String>> preparedMeals = ValueNotifier(<String>{});
+  final ValueNotifier<bool> autoPilot = ValueNotifier(false);
+
+  bool _loading = false;
+  bool _initialized = false;
+
+  bool get isLoading => _loading;
+
+  Future<void> loadPlan({bool force = false}) async {
+    if (_loading) return;
+    if (_initialized && !force) return;
+    _loading = true;
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 360));
+    final plan = _dataService.mealPlanWeek.map((day) => day.copyWith(items: List<FoodItem>.from(day.items))).toList();
+    days.value = plan;
+    activeDayIndex.value = 0;
+    preparedMeals.value = <String>{};
+    _initialized = true;
+    _loading = false;
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadPlan(force: true);
+
+  void goToDay(int index) {
+    if (days.value.isEmpty) return;
+    final clamped = index.clamp(0, days.value.length - 1);
+    activeDayIndex.value = clamped;
+    notifyListeners();
+  }
+
+  void togglePrepared(String foodId) {
+    final updated = Set<String>.from(preparedMeals.value);
+    if (!updated.add(foodId)) {
+      updated.remove(foodId);
+    }
+    preparedMeals.value = updated;
+    notifyListeners();
+  }
+
+  void toggleAutoPilot(bool value) {
+    autoPilot.value = value;
+    notifyListeners();
+  }
+
+  void rotatePlan() {
+    final plan = List<MealPlanDay>.from(days.value);
+    if (plan.length <= 1) return;
+    final first = plan.removeAt(0);
+    plan.add(first);
+    days.value = plan;
+    activeDayIndex.value = 0;
+    preparedMeals.value = <String>{};
+    notifyListeners();
   }
 }
 

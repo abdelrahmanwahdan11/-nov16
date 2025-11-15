@@ -19,6 +19,7 @@ import '../../features/profile/profile_screen.dart';
 import '../../features/profile/manage_address_screen.dart';
 import '../../features/profile/payment_methods_screen.dart';
 import '../../features/rewards/rewards_screen.dart';
+import '../../features/meal_planner/meal_planner_screen.dart';
 import '../../features/restaurant/restaurant_details_screen.dart';
 import '../../features/restaurant/restaurants_screen.dart';
 import '../../features/search/search_screen.dart';
@@ -82,6 +83,8 @@ class AppRouter {
           return HelpCenterScreen(state: state);
         case RewardsScreen.route:
           return RewardsScreen(state: state);
+        case MealPlannerScreen.route:
+          return MealPlannerScreen(state: state);
         default:
           return const OnboardingScreen();
       }

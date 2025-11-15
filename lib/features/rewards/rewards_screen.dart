@@ -4,6 +4,7 @@ import '../../core/localization/app_localizations.dart';
 import '../../core/services/mock_data_service.dart';
 import '../../core/services/notifiers.dart';
 import '../../core/widgets/loyalty_progress_card.dart';
+import '../../core/utils/responsive.dart';
 
 class RewardsScreen extends StatelessWidget {
   const RewardsScreen({super.key, required this.state});
@@ -36,7 +37,7 @@ class RewardsScreen extends StatelessWidget {
           return RefreshIndicator(
             onRefresh: notifier.refresh,
             child: ListView(
-              padding: const EdgeInsets.all(24),
+              padding: context.pagePadding,
               children: [
                 LoyaltyProgressCard(
                   loc: loc,

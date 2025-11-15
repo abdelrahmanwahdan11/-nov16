@@ -3,6 +3,7 @@ import 'package:iconly/iconly.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/widgets/primary_button.dart';
+import '../../core/utils/responsive.dart';
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -49,7 +50,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Scaffold(
       appBar: AppBar(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: context.pagePadding,
         child: Form(
           key: _formKey,
           child: Column(

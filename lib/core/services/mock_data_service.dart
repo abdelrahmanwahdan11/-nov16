@@ -36,6 +36,42 @@ class FoodItem {
   final List<String> ingredients;
 }
 
+class MealPlanDay {
+  const MealPlanDay({
+    required this.day,
+    required this.focusKey,
+    required this.tipKey,
+    required this.totalCalories,
+    required this.items,
+    this.isPrepDay = false,
+  });
+
+  final String day;
+  final String focusKey;
+  final String tipKey;
+  final int totalCalories;
+  final List<FoodItem> items;
+  final bool isPrepDay;
+
+  MealPlanDay copyWith({
+    String? day,
+    String? focusKey,
+    String? tipKey,
+    int? totalCalories,
+    List<FoodItem>? items,
+    bool? isPrepDay,
+  }) {
+    return MealPlanDay(
+      day: day ?? this.day,
+      focusKey: focusKey ?? this.focusKey,
+      tipKey: tipKey ?? this.tipKey,
+      totalCalories: totalCalories ?? this.totalCalories,
+      items: items ?? this.items,
+      isPrepDay: isPrepDay ?? this.isPrepDay,
+    );
+  }
+}
+
 class Restaurant {
   const Restaurant({
     required this.id,
@@ -306,6 +342,8 @@ class MockDataService {
   List<FoodItem> get _foodItems => _baseFoodItems;
 
   UserProfile get userProfile => _profile;
+
+  List<MealPlanDay> get mealPlanWeek => _mealPlanWeek;
 }
 
 final List<FoodItem> _baseFoodItems = List.generate(
@@ -391,3 +429,46 @@ final UserProfile _profile = UserProfile(
   rewards: _profileRewards,
   favoriteRestaurants: const ['Spicy Heaven', 'Blooming Bowls', 'Saffron Soul'],
 );
+
+const List<String> _mealPlanDayNames = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+];
+
+const List<String> _mealPlanFocus = [
+  'focus_protein',
+  'focus_greens',
+  'focus_chef',
+  'focus_comfort',
+  'focus_spice',
+  'focus_weekend',
+  'focus_brunch',
+];
+
+const List<String> _mealPlanTips = [
+  'tip_hydrate',
+  'tip_extra_greens',
+  'tip_fruits',
+  'tip_mindful',
+  'tip_spice',
+  'tip_invite',
+  'tip_brunch',
+];
+
+final List<MealPlanDay> _mealPlanWeek = List.generate(_mealPlanDayNames.length, (index) {
+  final start = (index * 3) % _baseFoodItems.length;
+  final meals = _baseFoodItems.skip(start).take(3).toList();
+  return MealPlanDay(
+    day: _mealPlanDayNames[index],
+    focusKey: _mealPlanFocus[index % _mealPlanFocus.length],
+    tipKey: _mealPlanTips[index % _mealPlanTips.length],
+    totalCalories: 1650 + index * 110,
+    items: meals,
+    isPrepDay: index == 0 || index == 3,
+  );
+});

@@ -8,6 +8,7 @@ import '../../core/services/notifiers.dart';
 import '../shell/shell_screen.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
+import '../../core/utils/responsive.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
         duration: const Duration(milliseconds: 400),
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: context.pagePadding,
           child: Form(
             key: _formKey,
             child: Column(
