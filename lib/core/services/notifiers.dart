@@ -26,6 +26,7 @@ class AppState extends ChangeNotifier {
     reservationsNotifier = ReservationsNotifier(mock);
     giftCardsNotifier = GiftCardsNotifier(mock);
     subscriptionsNotifier = SubscriptionsNotifier(mock);
+    wellnessNotifier = WellnessNotifier(mock);
   }
 
   late final MockDataService mockDataService;
@@ -45,6 +46,7 @@ class AppState extends ChangeNotifier {
   late final ReservationsNotifier reservationsNotifier;
   late final GiftCardsNotifier giftCardsNotifier;
   late final SubscriptionsNotifier subscriptionsNotifier;
+  late final WellnessNotifier wellnessNotifier;
 
   final SharedPrefsService prefs = SharedPrefsService();
 
@@ -62,6 +64,7 @@ class AppState extends ChangeNotifier {
     unawaited(reservationsNotifier.loadInitial());
     unawaited(giftCardsNotifier.loadInitial());
     unawaited(subscriptionsNotifier.loadInitial());
+    unawaited(wellnessNotifier.loadInitial());
   }
 
   @override
@@ -82,6 +85,7 @@ class AppState extends ChangeNotifier {
     reservationsNotifier.dispose();
     giftCardsNotifier.dispose();
     subscriptionsNotifier.dispose();
+    wellnessNotifier.dispose();
     super.dispose();
   }
 }
@@ -836,6 +840,93 @@ class CommunityNotifier extends ChangeNotifier {
     stories.dispose();
     isLoading.dispose();
     loadingMore.dispose();
+    super.dispose();
+  }
+}
+
+class WellnessNotifier extends ChangeNotifier {
+  WellnessNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  final ValueNotifier<List<WellnessProgram>> programs = ValueNotifier([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
+  final ValueNotifier<String?> selectedFocus = ValueNotifier(null);
+
+  List<WellnessProgram> _all = [];
+  List<WellnessProgram> _filtered = [];
+  int _page = 0;
+  bool _hasMore = true;
+  bool _initialized = false;
+
+  List<String> get focusKeys => _dataService.wellnessFocuses;
+  bool get hasMore => _hasMore;
+
+  Future<void> loadInitial({bool force = false}) async {
+    if (isLoading.value) return;
+    if (_initialized && !force) return;
+    isLoading.value = true;
+    _hasMore = true;
+    _page = 0;
+    programs.value = [];
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 420));
+    _all = List<WellnessProgram>.from(_dataService.wellnessPrograms);
+    _applyFilters();
+    isLoading.value = false;
+    _initialized = true;
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadInitial(force: true);
+
+  Future<void> loadMore() async {
+    if (!_hasMore || loadingMore.value || isLoading.value) return;
+    loadingMore.value = true;
+    await Future.delayed(const Duration(milliseconds: 360));
+    final nextPage = _page + 1;
+    final start = nextPage * MockDataService.wellnessPageSize;
+    final nextBatch =
+        _filtered.skip(start).take(MockDataService.wellnessPageSize).toList();
+    if (nextBatch.isEmpty) {
+      _hasMore = false;
+    } else {
+      programs.value = [...programs.value, ...nextBatch];
+      _page = nextPage;
+      _hasMore = programs.value.length < _filtered.length;
+    }
+    loadingMore.value = false;
+    notifyListeners();
+  }
+
+  void selectFocus(String? key) {
+    final current = selectedFocus.value;
+    selectedFocus.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void _applyFilters() {
+    Iterable<WellnessProgram> filtered = _all;
+    final focus = selectedFocus.value;
+    if (focus != null) {
+      filtered = filtered.where((program) => program.focusKey == focus);
+    }
+    _filtered = filtered.toList();
+    _page = 0;
+    final initial =
+        _filtered.take(MockDataService.wellnessPageSize).toList();
+    programs.value = initial;
+    _hasMore = _filtered.length > initial.length;
+  }
+
+  @override
+  void dispose() {
+    programs.dispose();
+    isLoading.dispose();
+    loadingMore.dispose();
+    selectedFocus.dispose();
     super.dispose();
   }
 }

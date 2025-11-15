@@ -19,6 +19,7 @@ import '../reservations/reservations_screen.dart';
 import '../reservations/reservation_sheet.dart';
 import '../gift_cards/gift_cards_screen.dart';
 import '../subscriptions/subscriptions_screen.dart';
+import '../wellness/wellness_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.state});
@@ -269,6 +270,89 @@ class _HomeScreenState extends State<HomeScreen> {
                             plan: featured,
                             loc: loc,
                             onTap: () => Navigator.of(context).pushNamed(SubscriptionsScreen.route),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      );
+                    },
+                  ),
+                  AnimatedBuilder(
+                    animation: Listenable.merge([
+                      widget.state.wellnessNotifier,
+                      widget.state.wellnessNotifier.programs,
+                      widget.state.wellnessNotifier.isLoading,
+                    ]),
+                    builder: (context, _) {
+                      final wellnessNotifier = widget.state.wellnessNotifier;
+                      final journeys = wellnessNotifier.programs.value;
+                      if (wellnessNotifier.isLoading.value && journeys.isEmpty) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(
+                              title: loc.translate('wellness_home_title'),
+                              actionLabel: loc.translate('wellness_home_cta'),
+                              onActionPressed: () =>
+                                  Navigator.of(context).pushNamed(WellnessScreen.route),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              loc.translate('wellness_home_subtitle'),
+                              style: theme.textTheme.bodySmall,
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              height: 220,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemBuilder: (_, __) => const SkeletonLoader(
+                                  width: 240,
+                                  height: 200,
+                                  borderRadius: 28,
+                                ),
+                                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                                itemCount: 3,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }
+                      if (journeys.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      final preview = journeys.take(3).toList();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(
+                            title: loc.translate('wellness_home_title'),
+                            actionLabel: loc.translate('wellness_home_cta'),
+                            onActionPressed: () =>
+                                Navigator.of(context).pushNamed(WellnessScreen.route),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            loc.translate('wellness_home_subtitle'),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 220,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: preview.length,
+                              separatorBuilder: (_, __) => const SizedBox(width: 16),
+                              itemBuilder: (context, index) {
+                                final program = preview[index];
+                                return _WellnessPreviewCard(
+                                  program: program,
+                                  loc: loc,
+                                  onTap: () =>
+                                      Navigator.of(context).pushNamed(WellnessScreen.route),
+                                );
+                              },
+                            ),
                           ),
                           const SizedBox(height: 24),
                         ],
@@ -1190,6 +1274,100 @@ class _SubscriptionHomeCard extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_rounded,
                       color: theme.colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WellnessPreviewCard extends StatelessWidget {
+  const _WellnessPreviewCard({required this.program, required this.loc, required this.onTap});
+
+  final WellnessProgram program;
+  final AppLocalizations loc;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final durationLabel = loc
+        .translate('wellness_duration_days')
+        .replaceFirst('%d', program.durationDays.toString());
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOut,
+      width: 240,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Hero(
+                  tag: 'wellness-${program.id}',
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: Image.network(
+                        program.imageUrl,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  loc.translate(program.titleKey),
+                  style: theme.textTheme.titleMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  loc.translate(program.subtitleKey),
+                  style: theme.textTheme.bodySmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    Icon(
+                      IconlyLight.time_circle,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        durationLabel,
+                        style: theme.textTheme.labelMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

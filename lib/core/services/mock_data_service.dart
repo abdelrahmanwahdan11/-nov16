@@ -166,6 +166,32 @@ class SubscriptionPlan {
   final String? highlightKey;
 }
 
+class WellnessProgram {
+  const WellnessProgram({
+    required this.id,
+    required this.titleKey,
+    required this.subtitleKey,
+    required this.imageUrl,
+    required this.focusKey,
+    required this.benefitKeys,
+    required this.durationDays,
+    required this.hydrationGlasses,
+    required this.mindfulnessMinutes,
+    required this.sleepHours,
+  });
+
+  final String id;
+  final String titleKey;
+  final String subtitleKey;
+  final String imageUrl;
+  final String focusKey;
+  final List<String> benefitKeys;
+  final int durationDays;
+  final int hydrationGlasses;
+  final int mindfulnessMinutes;
+  final int sleepHours;
+}
+
 class AppNotification {
   const AppNotification({
     required this.id,
@@ -590,6 +616,7 @@ class MockDataService {
       ),
     ];
 
+    _wellnessPrograms = _wellnessProgramSeeds;
     _subscriptions = _subscriptionPlans;
   }
 
@@ -598,12 +625,14 @@ class MockDataService {
   static const int notificationsPageSize = 4;
   static const int giftCardPageSize = 3;
   static const int subscriptionPageSize = 4;
+  static const int wellnessPageSize = 3;
 
   late final List<Restaurant> _restaurants;
   late final List<ReservationSlot> _reservationSlots;
   late final List<Reservation> _reservations;
   late final List<GiftCard> _giftCards;
   late final List<SubscriptionPlan> _subscriptions;
+  late final List<WellnessProgram> _wellnessPrograms;
 
   final List<Category> mockCategories = [
     const Category(
@@ -639,6 +668,10 @@ class MockDataService {
     final start = page * popularPageSize;
     return _foodItems.skip(start).take(popularPageSize).toList();
   }
+
+  List<WellnessProgram> get wellnessPrograms => List.unmodifiable(_wellnessPrograms);
+
+  List<String> get wellnessFocuses => List.unmodifiable(_wellnessFocusKeys);
 
   List<FoodItem> paginateCatalog(int page) {
     final start = page * catalogPageSize;
@@ -973,6 +1006,80 @@ final List<SubscriptionPlan> _subscriptionPlans = [
       'subscriptions_perk_free_setup',
     ],
   ),
+];
+
+final List<WellnessProgram> _wellnessProgramSeeds = [
+  WellnessProgram(
+    id: 'wellness_1',
+    titleKey: 'wellness_program_title_energy',
+    subtitleKey: 'wellness_program_subtitle_energy',
+    imageUrl: 'https://images.unsplash.com/photo-1484981137413-6aa33b789ccc?auto=format&fit=crop&w=900&q=80',
+    focusKey: 'wellness_focus_energy',
+    benefitKeys: const [
+      'wellness_benefit_energy',
+      'wellness_benefit_balanced_plate',
+      'wellness_benefit_breathwork',
+    ],
+    durationDays: 5,
+    hydrationGlasses: 8,
+    mindfulnessMinutes: 12,
+    sleepHours: 7,
+  ),
+  WellnessProgram(
+    id: 'wellness_2',
+    titleKey: 'wellness_program_title_mindful',
+    subtitleKey: 'wellness_program_subtitle_mindful',
+    imageUrl: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80&sat=-20',
+    focusKey: 'wellness_focus_mindful',
+    benefitKeys: const [
+      'wellness_benefit_sleep',
+      'wellness_benefit_mood',
+      'wellness_benefit_breathwork',
+    ],
+    durationDays: 7,
+    hydrationGlasses: 6,
+    mindfulnessMinutes: 18,
+    sleepHours: 8,
+  ),
+  WellnessProgram(
+    id: 'wellness_3',
+    titleKey: 'wellness_program_title_recovery',
+    subtitleKey: 'wellness_program_subtitle_recovery',
+    imageUrl: 'https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=900&q=80',
+    focusKey: 'wellness_focus_recovery',
+    benefitKeys: const [
+      'wellness_benefit_mobility',
+      'wellness_benefit_balanced_plate',
+      'wellness_benefit_desk',
+    ],
+    durationDays: 6,
+    hydrationGlasses: 9,
+    mindfulnessMinutes: 10,
+    sleepHours: 7,
+  ),
+  WellnessProgram(
+    id: 'wellness_4',
+    titleKey: 'wellness_program_title_immune',
+    subtitleKey: 'wellness_program_subtitle_immune',
+    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80&sat=10',
+    focusKey: 'wellness_focus_immune',
+    benefitKeys: const [
+      'wellness_benefit_immunity',
+      'wellness_benefit_energy',
+      'wellness_benefit_sleep',
+    ],
+    durationDays: 10,
+    hydrationGlasses: 9,
+    mindfulnessMinutes: 14,
+    sleepHours: 8,
+  ),
+];
+
+const List<String> _wellnessFocusKeys = [
+  'wellness_focus_energy',
+  'wellness_focus_mindful',
+  'wellness_focus_recovery',
+  'wellness_focus_immune',
 ];
 
 final UserProfile _profile = UserProfile(
