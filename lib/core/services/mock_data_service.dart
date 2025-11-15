@@ -142,6 +142,64 @@ class GiftCard {
   final List<String> perkKeys;
 }
 
+class ChefProfile {
+  const ChefProfile({
+    required this.id,
+    required this.nameKey,
+    required this.titleKey,
+    required this.imageUrl,
+    required this.cuisineKeys,
+    required this.specialtyKeys,
+    required this.experienceYears,
+    required this.rating,
+    required this.storyKey,
+    required this.highlightKeys,
+  });
+
+  final String id;
+  final String nameKey;
+  final String titleKey;
+  final String imageUrl;
+  final List<String> cuisineKeys;
+  final List<String> specialtyKeys;
+  final int experienceYears;
+  final double rating;
+  final String storyKey;
+  final List<String> highlightKeys;
+}
+
+class CateringPackage {
+  const CateringPackage({
+    required this.id,
+    required this.titleKey,
+    required this.subtitleKey,
+    required this.imageUrl,
+    required this.occasionKey,
+    required this.cuisineKeys,
+    required this.serviceStyleKey,
+    required this.minGuests,
+    required this.maxGuests,
+    required this.pricePerGuest,
+    required this.rating,
+    required this.leadTimeDays,
+    required this.highlightKeys,
+  });
+
+  final String id;
+  final String titleKey;
+  final String subtitleKey;
+  final String imageUrl;
+  final String occasionKey;
+  final List<String> cuisineKeys;
+  final String serviceStyleKey;
+  final int minGuests;
+  final int maxGuests;
+  final double pricePerGuest;
+  final double rating;
+  final int leadTimeDays;
+  final List<String> highlightKeys;
+}
+
 class SubscriptionPlan {
   const SubscriptionPlan({
     required this.id,
@@ -618,6 +676,8 @@ class MockDataService {
 
     _wellnessPrograms = _wellnessProgramSeeds;
     _subscriptions = _subscriptionPlans;
+    _cateringPackages = _cateringPackageSeeds;
+    _chefs = _chefProfileSeeds;
   }
 
   static const int popularPageSize = 6;
@@ -626,6 +686,8 @@ class MockDataService {
   static const int giftCardPageSize = 3;
   static const int subscriptionPageSize = 4;
   static const int wellnessPageSize = 3;
+  static const int cateringPageSize = 3;
+  static const int chefPageSize = 3;
 
   late final List<Restaurant> _restaurants;
   late final List<ReservationSlot> _reservationSlots;
@@ -633,6 +695,8 @@ class MockDataService {
   late final List<GiftCard> _giftCards;
   late final List<SubscriptionPlan> _subscriptions;
   late final List<WellnessProgram> _wellnessPrograms;
+  late final List<CateringPackage> _cateringPackages;
+  late final List<ChefProfile> _chefs;
 
   final List<Category> mockCategories = [
     const Category(
@@ -682,6 +746,10 @@ class MockDataService {
 
   List<SubscriptionPlan> get subscriptionPlans => List.unmodifiable(_subscriptions);
 
+  List<CateringPackage> get cateringPackages => List.unmodifiable(_cateringPackages);
+
+  List<ChefProfile> get chefProfiles => List.unmodifiable(_chefs);
+
   List<String> get giftOccasionKeys => const [
         'gift_occasion_thankyou',
         'gift_occasion_birthday',
@@ -716,6 +784,53 @@ class MockDataService {
       ];
 
   List<int> get subscriptionDurations => const [4, 8, 12];
+
+  List<String> get chefCuisineKeys => const [
+        'catering_cuisine_mediterranean',
+        'catering_cuisine_asian',
+        'catering_cuisine_middle_eastern',
+        'catering_cuisine_modern',
+      ];
+
+  List<String> get chefSpecialtyKeys => const [
+        'chef_specialty_tasting',
+        'chef_specialty_plating',
+        'chef_specialty_wellness',
+        'chef_specialty_patisserie',
+        'chef_specialty_fire',
+        'chef_specialty_collaboration',
+      ];
+
+  List<int> get chefExperienceThresholds => const [8, 12];
+
+  List<String> get cateringOccasionKeys => const [
+        'catering_occasion_brunch',
+        'catering_occasion_corporate',
+        'catering_occasion_product',
+        'catering_occasion_family',
+        'catering_occasion_wellness',
+      ];
+
+  List<String> get cateringCuisineKeys => const [
+        'catering_cuisine_mediterranean',
+        'catering_cuisine_asian',
+        'catering_cuisine_modern',
+        'catering_cuisine_middle_eastern',
+        'catering_cuisine_latino',
+      ];
+
+  List<String> get cateringServiceStyleKeys => const [
+        'catering_service_buffet',
+        'catering_service_plated',
+        'catering_service_family_style',
+        'catering_service_live_station',
+      ];
+
+  Map<String, List<int>> get cateringHeadcountRanges => const {
+        'catering_headcount_small': [12, 30],
+        'catering_headcount_medium': [30, 75],
+        'catering_headcount_large': [75, 150],
+      };
 
   List<FoodItem> searchFood(String query) {
     final lower = query.toLowerCase();
@@ -1004,6 +1119,193 @@ final List<SubscriptionPlan> _subscriptionPlans = [
     perkKeys: [
       'subscriptions_perk_priority_support',
       'subscriptions_perk_free_setup',
+    ],
+  ),
+];
+
+final List<ChefProfile> _chefProfileSeeds = [
+  const ChefProfile(
+    id: 'chef_amelia',
+    nameKey: 'chef_name_amelia',
+    titleKey: 'chef_title_amelia',
+    imageUrl:
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80',
+    cuisineKeys: const ['catering_cuisine_mediterranean', 'catering_cuisine_modern'],
+    specialtyKeys: const ['chef_specialty_tasting', 'chef_specialty_plating'],
+    experienceYears: 12,
+    rating: 4.9,
+    storyKey: 'chef_story_amelia',
+    highlightKeys: const [
+      'chef_highlight_story_dinners',
+      'chef_highlight_botanical',
+      'chef_highlight_zero_waste',
+    ],
+  ),
+  const ChefProfile(
+    id: 'chef_kareem',
+    nameKey: 'chef_name_kareem',
+    titleKey: 'chef_title_kareem',
+    imageUrl:
+        'https://images.unsplash.com/photo-1481833761820-0509d3217039?auto=format&fit=crop&w=900&q=80',
+    cuisineKeys: const ['catering_cuisine_middle_eastern', 'catering_cuisine_asian'],
+    specialtyKeys: const ['chef_specialty_fire', 'chef_specialty_tasting'],
+    experienceYears: 15,
+    rating: 4.8,
+    storyKey: 'chef_story_kareem',
+    highlightKeys: const [
+      'chef_highlight_story_dinners',
+      'chef_highlight_concierge',
+      'chef_highlight_award_winning',
+    ],
+  ),
+  const ChefProfile(
+    id: 'chef_sofia',
+    nameKey: 'chef_name_sofia',
+    titleKey: 'chef_title_sofia',
+    imageUrl:
+        'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=900&q=80',
+    cuisineKeys: const ['catering_cuisine_modern'],
+    specialtyKeys: const ['chef_specialty_patisserie', 'chef_specialty_plating'],
+    experienceYears: 9,
+    rating: 4.7,
+    storyKey: 'chef_story_sofia',
+    highlightKeys: const [
+      'chef_highlight_patisserie',
+      'chef_highlight_globetrotting',
+      'chef_highlight_award_winning',
+    ],
+  ),
+  const ChefProfile(
+    id: 'chef_tariq',
+    nameKey: 'chef_name_tariq',
+    titleKey: 'chef_title_tariq',
+    imageUrl:
+        'https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=900&q=80',
+    cuisineKeys: const ['catering_cuisine_middle_eastern', 'catering_cuisine_mediterranean'],
+    specialtyKeys: const ['chef_specialty_wellness', 'chef_specialty_collaboration'],
+    experienceYears: 11,
+    rating: 4.85,
+    storyKey: 'chef_story_tariq',
+    highlightKeys: const [
+      'chef_highlight_botanical',
+      'chef_highlight_concierge',
+      'chef_highlight_zero_waste',
+    ],
+  ),
+];
+
+final List<CateringPackage> _cateringPackageSeeds = [
+  const CateringPackage(
+    id: 'catering_1',
+    titleKey: 'catering_package_title_brunch',
+    subtitleKey: 'catering_package_subtitle_brunch',
+    imageUrl:
+        'https://images.unsplash.com/photo-1525253086316-d0c936c814f8?auto=format&fit=crop&w=1200&q=80',
+    occasionKey: 'catering_occasion_brunch',
+    cuisineKeys: [
+      'catering_cuisine_mediterranean',
+      'catering_cuisine_modern',
+    ],
+    serviceStyleKey: 'catering_service_buffet',
+    minGuests: 18,
+    maxGuests: 60,
+    pricePerGuest: 38,
+    rating: 4.9,
+    leadTimeDays: 5,
+    highlightKeys: [
+      'catering_highlight_live_station',
+      'catering_highlight_styling',
+      'catering_highlight_allergens',
+    ],
+  ),
+  const CateringPackage(
+    id: 'catering_2',
+    titleKey: 'catering_package_title_executive',
+    subtitleKey: 'catering_package_subtitle_executive',
+    imageUrl:
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80&sat=-10',
+    occasionKey: 'catering_occasion_corporate',
+    cuisineKeys: [
+      'catering_cuisine_modern',
+    ],
+    serviceStyleKey: 'catering_service_plated',
+    minGuests: 25,
+    maxGuests: 90,
+    pricePerGuest: 54,
+    rating: 4.8,
+    leadTimeDays: 7,
+    highlightKeys: [
+      'catering_highlight_staffing',
+      'catering_highlight_sommelier',
+      'catering_highlight_tastings',
+    ],
+  ),
+  const CateringPackage(
+    id: 'catering_3',
+    titleKey: 'catering_package_title_launch',
+    subtitleKey: 'catering_package_subtitle_launch',
+    imageUrl:
+        'https://images.unsplash.com/photo-1521305916504-4a1121188589?auto=format&fit=crop&w=1200&q=80',
+    occasionKey: 'catering_occasion_product',
+    cuisineKeys: [
+      'catering_cuisine_asian',
+      'catering_cuisine_modern',
+    ],
+    serviceStyleKey: 'catering_service_live_station',
+    minGuests: 40,
+    maxGuests: 120,
+    pricePerGuest: 61,
+    rating: 4.7,
+    leadTimeDays: 10,
+    highlightKeys: [
+      'catering_highlight_live_station',
+      'catering_highlight_branding',
+      'catering_highlight_allergens',
+    ],
+  ),
+  const CateringPackage(
+    id: 'catering_4',
+    titleKey: 'catering_package_title_family',
+    subtitleKey: 'catering_package_subtitle_family',
+    imageUrl:
+        'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1200&q=80',
+    occasionKey: 'catering_occasion_family',
+    cuisineKeys: [
+      'catering_cuisine_middle_eastern',
+      'catering_cuisine_mediterranean',
+    ],
+    serviceStyleKey: 'catering_service_family_style',
+    minGuests: 20,
+    maxGuests: 80,
+    pricePerGuest: 32,
+    rating: 4.9,
+    leadTimeDays: 4,
+    highlightKeys: [
+      'catering_highlight_plant_forward',
+      'catering_highlight_staffing',
+    ],
+  ),
+  const CateringPackage(
+    id: 'catering_5',
+    titleKey: 'catering_package_title_reset',
+    subtitleKey: 'catering_package_subtitle_reset',
+    imageUrl:
+        'https://images.unsplash.com/photo-1484980972926-edee96e0960d?auto=format&fit=crop&w=1200&q=80',
+    occasionKey: 'catering_occasion_wellness',
+    cuisineKeys: [
+      'catering_cuisine_mediterranean',
+      'catering_cuisine_latino',
+    ],
+    serviceStyleKey: 'catering_service_buffet',
+    minGuests: 15,
+    maxGuests: 55,
+    pricePerGuest: 36,
+    rating: 4.85,
+    leadTimeDays: 6,
+    highlightKeys: [
+      'catering_highlight_mindful_pairings',
+      'catering_highlight_allergens',
+      'catering_highlight_tastings',
     ],
   ),
 ];

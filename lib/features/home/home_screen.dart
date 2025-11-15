@@ -20,6 +20,8 @@ import '../reservations/reservation_sheet.dart';
 import '../gift_cards/gift_cards_screen.dart';
 import '../subscriptions/subscriptions_screen.dart';
 import '../wellness/wellness_screen.dart';
+import '../catering/catering_screen.dart';
+import '../chefs/chefs_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.state});
@@ -427,11 +429,157 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 24),
                         ],
                       );
-                    },
-                  ),
-                  AnimatedBuilder(
-                    animation: Listenable.merge([
-                      widget.state.mealPlannerNotifier,
+                },
+              ),
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  widget.state.cateringNotifier,
+                  widget.state.cateringNotifier.packages,
+                  widget.state.cateringNotifier.isLoading,
+                ]),
+                builder: (context, _) {
+                  final cateringNotifier = widget.state.cateringNotifier;
+                  final packages = cateringNotifier.packages.value;
+                  if (cateringNotifier.isLoading.value && packages.isEmpty) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SectionHeader(
+                          title: loc.translate('catering'),
+                          actionLabel: loc.translate('view_all'),
+                          onActionPressed: () =>
+                              Navigator.of(context).pushNamed(CateringScreen.route),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 200,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (_, __) => const SkeletonLoader(
+                              width: 240,
+                              height: 190,
+                              borderRadius: 28,
+                            ),
+                            separatorBuilder: (_, __) => const SizedBox(width: 16),
+                            itemCount: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  }
+                  if (packages.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final preview = packages.take(3).toList();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SectionHeader(
+                        title: loc.translate('catering'),
+                        actionLabel: loc.translate('view_all'),
+                        onActionPressed: () =>
+                            Navigator.of(context).pushNamed(CateringScreen.route),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 200,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: preview.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 16),
+                          itemBuilder: (context, index) {
+                            final package = preview[index];
+                            return _CateringPreviewCard(
+                              package: package,
+                              loc: loc,
+                              onTap: () => Navigator.of(context)
+                                  .pushNamed(CateringScreen.route),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
+              ),
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  widget.state.chefsNotifier,
+                  widget.state.chefsNotifier.profiles,
+                  widget.state.chefsNotifier.isLoading,
+                ]),
+                builder: (context, _) {
+                  final chefsNotifier = widget.state.chefsNotifier;
+                  final chefs = chefsNotifier.profiles.value;
+                  if (chefsNotifier.isLoading.value && chefs.isEmpty) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SectionHeader(
+                          title: loc.translate('chefs'),
+                          actionLabel: loc.translate('view_all'),
+                          onActionPressed: () =>
+                              Navigator.of(context).pushNamed(ChefsScreen.route),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 210,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (_, __) => const SkeletonLoader(
+                              width: 220,
+                              height: 210,
+                              borderRadius: 28,
+                            ),
+                            separatorBuilder: (_, __) => const SizedBox(width: 16),
+                            itemCount: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  }
+                  if (chefs.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final preview = chefs.take(3).toList();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SectionHeader(
+                        title: loc.translate('chefs'),
+                        actionLabel: loc.translate('view_all'),
+                        onActionPressed: () =>
+                            Navigator.of(context).pushNamed(ChefsScreen.route),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 210,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: preview.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 16),
+                          itemBuilder: (context, index) {
+                            final chef = preview[index];
+                            return _ChefPreviewCard(
+                              chef: chef,
+                              loc: loc,
+                              onTap: () =>
+                                  Navigator.of(context).pushNamed(ChefsScreen.route),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
+              ),
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  widget.state.mealPlannerNotifier,
                       widget.state.mealPlannerNotifier.days,
                       widget.state.mealPlannerNotifier.activeDayIndex,
                     ]),
@@ -1373,6 +1521,275 @@ class _WellnessPreviewCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChefPreviewCard extends StatelessWidget {
+  const _ChefPreviewCard({
+    required this.chef,
+    required this.loc,
+    required this.onTap,
+  });
+
+  final ChefProfile chef;
+  final AppLocalizations loc;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ratingLabel = loc
+        .translate('chefs_rating_label')
+        .replaceFirst('%s', chef.rating.toStringAsFixed(1));
+    final experienceLabel = loc
+        .translate('chefs_experience_years')
+        .replaceFirst('%d', chef.experienceYears.toString());
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOut,
+      width: 220,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.18),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Hero(
+                tag: 'chef_${chef.id}',
+                child: Image.network(
+                  chef.imageUrl,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.05),
+                      Colors.black.withOpacity(0.65),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                        Text(
+                          loc.translate(chef.nameKey),
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(color: Colors.white),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          loc.translate(chef.titleKey),
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(color: Colors.white70),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Icon(IconlyBold.star,
+                                color: theme.colorScheme.secondary, size: 18),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                ratingLabel,
+                                style: theme.textTheme.labelLarge
+                                    ?.copyWith(color: Colors.white),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          experienceLabel,
+                          style: theme.textTheme.labelMedium
+                              ?.copyWith(color: Colors.white70),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(IconlyLight.arrow_right_circle,
+                                color: Colors.white),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                loc.translate(chef.cuisineKeys.first),
+                                style: theme.textTheme.labelMedium
+                                    ?.copyWith(color: Colors.white70),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(onTap: onTap),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CateringPreviewCard extends StatelessWidget {
+  const _CateringPreviewCard({
+    required this.package,
+    required this.loc,
+    required this.onTap,
+  });
+
+  final CateringPackage package;
+  final AppLocalizations loc;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final price = package.pricePerGuest.toStringAsFixed(0);
+    final priceLabel =
+        loc.translate('catering_price_from').replaceFirst('%s', price);
+    final leadLabel =
+        loc.translate('catering_lead_time').replaceFirst('%d', package.leadTimeDays.toString());
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 240,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: theme.shadowColor.withOpacity(0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                child: Hero(
+                  tag: 'catering_${package.id}',
+                  child: AspectRatio(
+                    aspectRatio: 16 / 10,
+                    child: Image.network(
+                      package.imageUrl,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.translate(package.titleKey),
+                      style: theme.textTheme.titleMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      loc.translate(package.subtitleKey),
+                      style: theme.textTheme.bodySmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: package.highlightKeys
+                          .take(2)
+                          .map((key) => Chip(
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                backgroundColor:
+                                    theme.colorScheme.primary.withOpacity(0.12),
+                                label: Text(
+                                  loc.translate(key),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(IconlyLight.ticket,
+                            size: 16, color: theme.colorScheme.primary),
+                        const SizedBox(width: 6),
+                        Text(priceLabel, style: theme.textTheme.labelMedium),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(IconlyLight.time_circle,
+                            size: 16, color: theme.colorScheme.primary),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            leadLabel,
+                            style: theme.textTheme.labelMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

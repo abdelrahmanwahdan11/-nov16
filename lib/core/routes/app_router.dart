@@ -31,6 +31,8 @@ import '../../features/reservations/reservations_screen.dart';
 import '../../features/gift_cards/gift_cards_screen.dart';
 import '../../features/subscriptions/subscriptions_screen.dart';
 import '../../features/wellness/wellness_screen.dart';
+import '../../features/catering/catering_screen.dart';
+import '../../features/chefs/chefs_screen.dart';
 import '../services/mock_data_service.dart';
 import '../services/notifiers.dart';
 
@@ -103,6 +105,10 @@ class AppRouter {
           return SubscriptionsScreen(state: state);
         case WellnessScreen.route:
           return WellnessScreen(state: state);
+        case CateringScreen.route:
+          return CateringScreen(state: state);
+        case ChefsScreen.route:
+          return ChefsScreen(state: state);
         default:
           return const OnboardingScreen();
       }

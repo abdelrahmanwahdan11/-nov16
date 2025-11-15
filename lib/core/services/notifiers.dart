@@ -25,8 +25,10 @@ class AppState extends ChangeNotifier {
     notificationsNotifier = NotificationsNotifier(mock);
     reservationsNotifier = ReservationsNotifier(mock);
     giftCardsNotifier = GiftCardsNotifier(mock);
+    cateringNotifier = CateringNotifier(mock);
     subscriptionsNotifier = SubscriptionsNotifier(mock);
     wellnessNotifier = WellnessNotifier(mock);
+    chefsNotifier = ChefsNotifier(mock);
   }
 
   late final MockDataService mockDataService;
@@ -45,8 +47,10 @@ class AppState extends ChangeNotifier {
   late final NotificationsNotifier notificationsNotifier;
   late final ReservationsNotifier reservationsNotifier;
   late final GiftCardsNotifier giftCardsNotifier;
+  late final CateringNotifier cateringNotifier;
   late final SubscriptionsNotifier subscriptionsNotifier;
   late final WellnessNotifier wellnessNotifier;
+  late final ChefsNotifier chefsNotifier;
 
   final SharedPrefsService prefs = SharedPrefsService();
 
@@ -63,8 +67,10 @@ class AppState extends ChangeNotifier {
     unawaited(notificationsNotifier.loadInitial());
     unawaited(reservationsNotifier.loadInitial());
     unawaited(giftCardsNotifier.loadInitial());
+    unawaited(cateringNotifier.loadInitial());
     unawaited(subscriptionsNotifier.loadInitial());
     unawaited(wellnessNotifier.loadInitial());
+    unawaited(chefsNotifier.loadInitial());
   }
 
   @override
@@ -84,8 +90,10 @@ class AppState extends ChangeNotifier {
     notificationsNotifier.dispose();
     reservationsNotifier.dispose();
     giftCardsNotifier.dispose();
+    cateringNotifier.dispose();
     subscriptionsNotifier.dispose();
     wellnessNotifier.dispose();
+    chefsNotifier.dispose();
     super.dispose();
   }
 }
@@ -927,6 +935,307 @@ class WellnessNotifier extends ChangeNotifier {
     isLoading.dispose();
     loadingMore.dispose();
     selectedFocus.dispose();
+    super.dispose();
+  }
+}
+
+class CateringNotifier extends ChangeNotifier {
+  CateringNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  final ValueNotifier<List<CateringPackage>> packages = ValueNotifier([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
+  final ValueNotifier<String?> selectedOccasion = ValueNotifier(null);
+  final ValueNotifier<String?> selectedCuisine = ValueNotifier(null);
+  final ValueNotifier<String?> selectedServiceStyle = ValueNotifier(null);
+  final ValueNotifier<String?> selectedHeadcount = ValueNotifier(null);
+
+  List<CateringPackage> _all = [];
+  List<CateringPackage> _filtered = [];
+  int _page = 0;
+  bool _hasMore = true;
+  bool _initialized = false;
+
+  bool get hasMore => _hasMore;
+
+  Future<void> loadInitial({bool force = false}) async {
+    if (isLoading.value) return;
+    if (_initialized && !force) return;
+    isLoading.value = true;
+    _hasMore = true;
+    _page = 0;
+    packages.value = [];
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 420));
+    _all = List<CateringPackage>.from(_dataService.cateringPackages);
+    _applyFilters();
+    isLoading.value = false;
+    _initialized = true;
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadInitial(force: true);
+
+  Future<void> loadMore() async {
+    if (!_hasMore || loadingMore.value || isLoading.value) return;
+    loadingMore.value = true;
+    await Future.delayed(const Duration(milliseconds: 360));
+    final nextPage = _page + 1;
+    final start = nextPage * MockDataService.cateringPageSize;
+    final nextBatch =
+        _filtered.skip(start).take(MockDataService.cateringPageSize).toList();
+    if (nextBatch.isEmpty) {
+      _hasMore = false;
+    } else {
+      packages.value = [...packages.value, ...nextBatch];
+      _page = nextPage;
+      _hasMore = packages.value.length < _filtered.length;
+    }
+    loadingMore.value = false;
+    notifyListeners();
+  }
+
+  void selectOccasion(String? key) {
+    final current = selectedOccasion.value;
+    selectedOccasion.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void selectCuisine(String? key) {
+    final current = selectedCuisine.value;
+    selectedCuisine.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void selectServiceStyle(String? key) {
+    final current = selectedServiceStyle.value;
+    selectedServiceStyle.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void selectHeadcount(String? key) {
+    final current = selectedHeadcount.value;
+    selectedHeadcount.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void clearFilters() {
+    selectedOccasion.value = null;
+    selectedCuisine.value = null;
+    selectedServiceStyle.value = null;
+    selectedHeadcount.value = null;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void _applyFilters() {
+    Iterable<CateringPackage> filtered = _all;
+    final occasion = selectedOccasion.value;
+    final cuisine = selectedCuisine.value;
+    final service = selectedServiceStyle.value;
+    final headcount = selectedHeadcount.value;
+
+    if (occasion != null) {
+      filtered = filtered.where((pkg) => pkg.occasionKey == occasion);
+    }
+    if (cuisine != null) {
+      filtered = filtered.where((pkg) => pkg.cuisineKeys.contains(cuisine));
+    }
+    if (service != null) {
+      filtered = filtered.where((pkg) => pkg.serviceStyleKey == service);
+    }
+    if (headcount != null) {
+      final range = _dataService.cateringHeadcountRanges[headcount];
+      if (range != null && range.length == 2) {
+        final min = range[0];
+        final max = range[1];
+        filtered = filtered.where(
+          (pkg) => pkg.maxGuests >= min && pkg.minGuests <= max,
+        );
+      }
+    }
+
+    _filtered = filtered.toList();
+    _page = 0;
+    final initial =
+        _filtered.take(MockDataService.cateringPageSize).toList();
+    packages.value = initial;
+    _hasMore = _filtered.length > initial.length;
+  }
+
+  @override
+  void dispose() {
+    packages.dispose();
+    isLoading.dispose();
+    loadingMore.dispose();
+    selectedOccasion.dispose();
+    selectedCuisine.dispose();
+    selectedServiceStyle.dispose();
+    selectedHeadcount.dispose();
+    super.dispose();
+  }
+}
+
+class ChefsNotifier extends ChangeNotifier {
+  ChefsNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  final ValueNotifier<List<ChefProfile>> profiles = ValueNotifier([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
+  final ValueNotifier<Set<String>> selectedCuisines = ValueNotifier(<String>{});
+  final ValueNotifier<Set<String>> selectedSpecialties = ValueNotifier(<String>{});
+  final ValueNotifier<int?> selectedExperience = ValueNotifier(null);
+
+  List<ChefProfile> _all = [];
+  List<ChefProfile> _filtered = [];
+  int _page = 0;
+  bool _hasMore = true;
+  bool _initialized = false;
+
+  bool get hasMore => _hasMore;
+
+  Future<void> loadInitial({bool force = false}) async {
+    if (isLoading.value) return;
+    if (_initialized && !force) return;
+    isLoading.value = true;
+    _hasMore = true;
+    _page = 0;
+    profiles.value = [];
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 420));
+    _all = List<ChefProfile>.from(_dataService.chefProfiles);
+    _applyFilters();
+    isLoading.value = false;
+    _initialized = true;
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadInitial(force: true);
+
+  Future<void> loadMore() async {
+    if (!_hasMore || loadingMore.value || isLoading.value) return;
+    loadingMore.value = true;
+    await Future.delayed(const Duration(milliseconds: 360));
+    final nextPage = _page + 1;
+    final start = nextPage * MockDataService.chefPageSize;
+    final nextBatch =
+        _filtered.skip(start).take(MockDataService.chefPageSize).toList();
+    if (nextBatch.isEmpty) {
+      _hasMore = false;
+    } else {
+      profiles.value = [...profiles.value, ...nextBatch];
+      _page = nextPage;
+      _hasMore = profiles.value.length < _filtered.length;
+    }
+    loadingMore.value = false;
+    notifyListeners();
+  }
+
+  void toggleCuisine(String key) {
+    final current = {...selectedCuisines.value};
+    if (current.contains(key)) {
+      current.remove(key);
+    } else {
+      current.add(key);
+    }
+    selectedCuisines.value = current;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void toggleSpecialty(String key) {
+    final current = {...selectedSpecialties.value};
+    if (current.contains(key)) {
+      current.remove(key);
+    } else {
+      current.add(key);
+    }
+    selectedSpecialties.value = current;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void clearCuisines() {
+    if (selectedCuisines.value.isEmpty) return;
+    selectedCuisines.value = <String>{};
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void clearSpecialties() {
+    if (selectedSpecialties.value.isEmpty) return;
+    selectedSpecialties.value = <String>{};
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void selectExperience(int? years) {
+    if (selectedExperience.value == years) {
+      selectedExperience.value = null;
+    } else {
+      selectedExperience.value = years;
+    }
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void clearFilters() {
+    final hadFilters = selectedCuisines.value.isNotEmpty ||
+        selectedSpecialties.value.isNotEmpty ||
+        selectedExperience.value != null;
+    if (!hadFilters) return;
+    selectedCuisines.value = <String>{};
+    selectedSpecialties.value = <String>{};
+    selectedExperience.value = null;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void _applyFilters() {
+    Iterable<ChefProfile> filtered = _all;
+    final cuisines = selectedCuisines.value;
+    final specialties = selectedSpecialties.value;
+    final experience = selectedExperience.value;
+
+    if (cuisines.isNotEmpty) {
+      filtered = filtered.where((chef) {
+        return cuisines.any((cuisine) => chef.cuisineKeys.contains(cuisine));
+      });
+    }
+    if (specialties.isNotEmpty) {
+      filtered = filtered.where((chef) {
+        return specialties
+            .any((specialty) => chef.specialtyKeys.contains(specialty));
+      });
+    }
+    if (experience != null) {
+      filtered = filtered.where((chef) => chef.experienceYears >= experience);
+    }
+
+    _filtered = filtered.toList();
+    _page = 0;
+    final initial =
+        _filtered.take(MockDataService.chefPageSize).toList(growable: false);
+    profiles.value = initial;
+    _hasMore = _filtered.length > initial.length;
+  }
+
+  @override
+  void dispose() {
+    profiles.dispose();
+    isLoading.dispose();
+    loadingMore.dispose();
+    selectedCuisines.dispose();
+    selectedSpecialties.dispose();
+    selectedExperience.dispose();
     super.dispose();
   }
 }
