@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/services/mock_data_service.dart';
 import '../../core/services/notifiers.dart';
 import '../../core/widgets/empty_state.dart';
@@ -14,22 +15,21 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = MockDataService();
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Favorites')),
+      appBar: AppBar(title: Text(loc.translate('favorites'))),
       body: ValueListenableBuilder<Set<String>>(
         valueListenable: state.favoritesNotifier.favorites,
         builder: (context, favorites, _) {
           if (favorites.isEmpty) {
-            return const Center(
+            return Center(
               child: EmptyState(
-                title: 'Empty favorites',
-                subtitle: 'Tap the heart icon on dishes to save them here.',
+                title: loc.translate('empty_favorites_title'),
+                subtitle: loc.translate('empty_favorites_subtitle'),
               ),
             );
           }
-          final items = service.searchFood('')
-              .where((item) => favorites.contains(item.id))
-              .toList();
+          final items = service.itemsByIds(favorites);
           return RefreshIndicator(
             onRefresh: () async {
               await state.catalogNotifier.refresh();

@@ -90,7 +90,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   if (results.isEmpty) {
                     return EmptyState(
                       title: loc.translate('empty_state'),
-                      subtitle: 'Try another keyword or explore categories.',
+                      subtitle: loc.translate('search_empty_subtitle'),
                     );
                   }
                   return ListView.builder(

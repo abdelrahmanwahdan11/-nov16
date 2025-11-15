@@ -33,6 +33,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _refresh() async {
     await widget.state.homeFeedNotifier.refresh();
   }
@@ -62,10 +68,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Deliver to', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.secondary)),
+                      Text(
+                        loc.translate('deliver_to'),
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.secondary),
+                      ),
                       Row(
                         children: [
-                          Text('San Francisco', style: theme.textTheme.bodyLarge),
+                          Text(loc.translate('sample_city'), style: theme.textTheme.bodyLarge),
                           const Icon(Icons.keyboard_arrow_down, size: 18),
                         ],
                       ),
@@ -145,6 +154,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                   ),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: notifier.loadingMore,
+                    builder: (context, loading, _) {
+                      if (!loading) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Center(
+                          child: CircularProgressIndicator(color: theme.colorScheme.primary),
+                        ),
+                      );
+                    },
+                  ),
+                  AnimatedBuilder(
+                    animation: notifier,
+                    builder: (context, _) {
+                      if (!notifier.hasMore && notifier.popular.value.isNotEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            loc.translate('no_more_results'),
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
                 ],
               ),
             ),
@@ -183,9 +221,15 @@ class _OfferBanner extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Up to 35% OFF', style: theme.textTheme.headlineLarge?.copyWith(color: Colors.white)),
+            Text(
+              loc.translate('offer_banner_title'),
+              style: theme.textTheme.headlineLarge?.copyWith(color: Colors.white),
+            ),
             const SizedBox(height: 12),
-            Text('Delicious meals ready in minutes.', style: theme.textTheme.bodyLarge?.copyWith(color: Colors.white70)),
+            Text(
+              loc.translate('offer_banner_subtitle'),
+              style: theme.textTheme.bodyLarge?.copyWith(color: Colors.white70),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pushNamed(CatalogScreen.route),

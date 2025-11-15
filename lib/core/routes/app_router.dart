@@ -8,6 +8,7 @@ import '../../features/cart/cart_screen.dart';
 import '../../features/catalog/catalog_screen.dart';
 import '../../features/comparison/comparison_screen.dart';
 import '../../features/favorites/favorites_screen.dart';
+import '../../features/chat/chat_screen.dart';
 import '../../features/food_details/food_details_screen.dart';
 import '../../features/help/help_center_screen.dart';
 import '../../features/home/home_screen.dart';
@@ -58,6 +59,8 @@ class AppRouter {
           return ComparisonScreen(state: state);
         case CartScreen.route:
           return CartScreen(state: state);
+        case ChatScreen.route:
+          return ChatScreen(state: state);
         case OrdersScreen.route:
           return OrdersScreen(state: state);
         case TrackOrderScreen.route:

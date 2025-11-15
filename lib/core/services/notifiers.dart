@@ -38,6 +38,20 @@ class AppState extends ChangeNotifier {
     unawaited(catalogNotifier.loadInitial());
     unawaited(ordersNotifier.loadInitial());
   }
+
+  @override
+  void dispose() {
+    themeNotifier.dispose();
+    localeNotifier.dispose();
+    homeFeedNotifier.dispose();
+    catalogNotifier.dispose();
+    searchNotifier.dispose();
+    cartNotifier.dispose();
+    comparisonNotifier.dispose();
+    favoritesNotifier.dispose();
+    ordersNotifier.dispose();
+    super.dispose();
+  }
 }
 
 class AppStateScope extends InheritedNotifier<AppState> {
@@ -114,37 +128,64 @@ class HomeFeedNotifier extends ChangeNotifier {
   final ValueNotifier<List<FoodItem>> offers = ValueNotifier([]);
   final ValueNotifier<List<Category>> categories = ValueNotifier([]);
   final ValueNotifier<List<FoodItem>> popular = ValueNotifier([]);
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
   bool _loading = false;
+  bool _hasMore = true;
   int _page = 0;
 
   bool get isLoading => _loading;
+  bool get hasMore => _hasMore;
 
   Future<void> loadInitial() async {
     if (_loading) return;
     _loading = true;
+    _hasMore = true;
+    _page = 0;
+    offers.value = [];
+    categories.value = [];
+    popular.value = [];
     notifyListeners();
     await Future.delayed(const Duration(milliseconds: 600));
     offers.value = _dataService.mockOffers;
     categories.value = _dataService.mockCategories;
-    popular.value = _dataService.paginatePopular(_page);
+    final batch = _dataService.paginatePopular(_page);
+    popular.value = batch;
+    _hasMore = batch.length == MockDataService.popularPageSize;
     _loading = false;
     notifyListeners();
   }
 
   Future<void> refresh() async {
     _page = 0;
+    _hasMore = true;
     await loadInitial();
   }
 
   Future<void> loadMore() async {
-    if (_loading) return;
-    _loading = true;
-    notifyListeners();
+    if (_loading || loadingMore.value || !_hasMore) return;
+    loadingMore.value = true;
     await Future.delayed(const Duration(milliseconds: 500));
     _page += 1;
-    popular.value = [...popular.value, ..._dataService.paginatePopular(_page)];
-    _loading = false;
+    final batch = _dataService.paginatePopular(_page);
+    if (batch.isEmpty) {
+      _hasMore = false;
+    } else {
+      popular.value = [...popular.value, ...batch];
+      if (batch.length < MockDataService.popularPageSize) {
+        _hasMore = false;
+      }
+    }
+    loadingMore.value = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    offers.dispose();
+    categories.dispose();
+    popular.dispose();
+    loadingMore.dispose();
+    super.dispose();
   }
 }
 
@@ -156,31 +197,45 @@ class CatalogNotifier extends ChangeNotifier {
   final ValueNotifier<Set<String>> activeFilters = ValueNotifier({});
   final ValueNotifier<String?> sortOption = ValueNotifier(null);
   bool _loading = false;
-  int _page = 0;
+  bool _hasMore = true;
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
+
+  bool get hasMore => _hasMore;
+  bool get isLoading => _loading;
 
   Future<void> loadInitial() async {
     if (_loading) return;
     _loading = true;
+    _hasMore = true;
+    items.value = [];
     notifyListeners();
     await Future.delayed(const Duration(milliseconds: 500));
-    items.value = _dataService.paginateCatalog(_page);
+    final source = _filteredSource();
+    items.value = source.take(MockDataService.catalogPageSize).toList();
+    _hasMore = source.length > items.value.length;
     _loading = false;
     notifyListeners();
   }
 
   Future<void> refresh() async {
-    _page = 0;
+    _hasMore = true;
     await loadInitial();
   }
 
   Future<void> loadMore() async {
-    if (_loading) return;
-    _loading = true;
-    notifyListeners();
+    if (_loading || loadingMore.value || !_hasMore) return;
+    loadingMore.value = true;
     await Future.delayed(const Duration(milliseconds: 450));
-    _page += 1;
-    items.value = [...items.value, ..._dataService.paginateCatalog(_page)];
-    _loading = false;
+    final source = _filteredSource();
+    final start = items.value.length;
+    final more = source.skip(start).take(MockDataService.catalogPageSize).toList();
+    if (more.isEmpty) {
+      _hasMore = false;
+    } else {
+      items.value = [...items.value, ...more];
+      _hasMore = source.length > items.value.length;
+    }
+    loadingMore.value = false;
     notifyListeners();
   }
 
@@ -190,13 +245,53 @@ class CatalogNotifier extends ChangeNotifier {
       filters.remove(filter);
     }
     activeFilters.value = filters;
-    items.value = _dataService.filterCatalog(filters, sortOption.value);
+    _hasMore = true;
+    _recomputeFromSource();
   }
 
   void updateSort(String option) {
-    sortOption.value = option;
-    items.value = _dataService.filterCatalog(activeFilters.value, option);
+    sortOption.value = option == 'best_match' ? null : option;
+    _hasMore = true;
+    _recomputeFromSource();
+  }
+
+  List<FoodItem> _filteredSource() {
+    Iterable<FoodItem> list = _dataService.allFoodItems;
+    if (activeFilters.value.isNotEmpty) {
+      list = list.where((item) => activeFilters.value.contains(item.category));
+    }
+    final option = sortOption.value;
+    final result = List<FoodItem>.from(list);
+    switch (option) {
+      case 'lowest_price':
+        result.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case 'highest_rating':
+        result.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'fastest_delivery':
+        result.sort((a, b) => a.deliveryTime.compareTo(b.deliveryTime));
+        break;
+      default:
+        break;
+    }
+    return result;
+  }
+
+  void _recomputeFromSource() {
+    final source = _filteredSource();
+    items.value = source.take(MockDataService.catalogPageSize).toList();
+    _hasMore = source.length > items.value.length;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    items.dispose();
+    activeFilters.dispose();
+    sortOption.dispose();
+    loadingMore.dispose();
+    super.dispose();
   }
 }
 
@@ -208,25 +303,38 @@ class SearchNotifier extends ChangeNotifier {
   final ValueNotifier<List<FoodItem>> results = ValueNotifier([]);
   final TextEditingController controller = TextEditingController();
   bool _isSearching = false;
+  Timer? _debounce;
 
   bool get isSearching => _isSearching;
 
   void search(String query) {
-    _isSearching = true;
-    notifyListeners();
     final trimmed = query.trim();
+    _debounce?.cancel();
     if (trimmed.isEmpty) {
-      results.value = [];
       _isSearching = false;
+      results.value = [];
       notifyListeners();
       return;
     }
-    if (!history.value.contains(trimmed)) {
-      history.value = [trimmed, ...history.value.take(4)];
-    }
-    results.value = _dataService.searchFood(trimmed);
-    _isSearching = false;
+    _isSearching = true;
     notifyListeners();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      if (!history.value.contains(trimmed)) {
+        history.value = [trimmed, ...history.value.take(4)];
+      }
+      results.value = _dataService.searchFood(trimmed);
+      _isSearching = false;
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    history.dispose();
+    results.dispose();
+    controller.dispose();
+    super.dispose();
   }
 }
 
@@ -270,6 +378,12 @@ class CartNotifier extends ChangeNotifier {
     items.value = [];
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    items.dispose();
+    super.dispose();
+  }
 }
 
 class ComparisonNotifier extends ChangeNotifier {
@@ -293,6 +407,12 @@ class ComparisonNotifier extends ChangeNotifier {
     selected.value = [];
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    selected.dispose();
+    super.dispose();
+  }
 }
 
 class FavoritesNotifier extends ChangeNotifier {
@@ -310,6 +430,12 @@ class FavoritesNotifier extends ChangeNotifier {
   }
 
   bool isFavorite(String id) => _favorites.value.contains(id);
+
+  @override
+  void dispose() {
+    _favorites.dispose();
+    super.dispose();
+  }
 }
 
 class OrdersNotifier extends ChangeNotifier {
@@ -319,6 +445,8 @@ class OrdersNotifier extends ChangeNotifier {
   final ValueNotifier<List<Order>> currentOrders = ValueNotifier([]);
   final ValueNotifier<List<Order>> historyOrders = ValueNotifier([]);
   bool _loading = false;
+
+  bool get isLoading => _loading;
 
   Future<void> loadInitial() async {
     if (_loading) return;
@@ -334,6 +462,13 @@ class OrdersNotifier extends ChangeNotifier {
 
   Future<void> refresh() async {
     await loadInitial();
+  }
+
+  @override
+  void dispose() {
+    currentOrders.dispose();
+    historyOrders.dispose();
+    super.dispose();
   }
 }
 

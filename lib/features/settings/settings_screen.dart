@@ -89,8 +89,8 @@ class SettingsScreen extends StatelessWidget {
                 .toList(),
           ),
           const SizedBox(height: 24),
-          SwitchListTile(value: true, onChanged: (_) {}, title: const Text('Order Updates')),
-          SwitchListTile(value: false, onChanged: (_) {}, title: const Text('Offers & Promotions')),
+          SwitchListTile(value: true, onChanged: (_) {}, title: Text(loc.translate('order_updates'))),
+          SwitchListTile(value: false, onChanged: (_) {}, title: Text(loc.translate('offers_promotions'))),
         ],
       ),
     );

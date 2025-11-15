@@ -75,6 +75,9 @@ class Order {
 }
 
 class MockDataService {
+  static const int popularPageSize = 6;
+  static const int catalogPageSize = 8;
+
   final List<Category> mockCategories = [
     const Category(
       id: 'fast_food',
@@ -106,34 +109,13 @@ class MockDataService {
   List<FoodItem> get mockOffers => _foodItems.take(5).toList();
 
   List<FoodItem> paginatePopular(int page) {
-    final start = page * 6;
-    return _foodItems.skip(start).take(6).toList();
+    final start = page * popularPageSize;
+    return _foodItems.skip(start).take(popularPageSize).toList();
   }
 
   List<FoodItem> paginateCatalog(int page) {
-    final start = page * 8;
-    return _foodItems.skip(start).take(8).toList();
-  }
-
-  List<FoodItem> filterCatalog(Set<String> filters, String? sort) {
-    Iterable<FoodItem> list = _foodItems;
-    if (filters.isNotEmpty) {
-      list = list.where((item) => filters.contains(item.category));
-    }
-    switch (sort) {
-      case 'Lowest price':
-        list = list.toList()..sort((a, b) => a.price.compareTo(b.price));
-        break;
-      case 'Highest rating':
-        list = list.toList()..sort((a, b) => b.rating.compareTo(a.rating));
-        break;
-      case 'Fastest delivery':
-        list = list.toList()..sort((a, b) => a.deliveryTime.compareTo(b.deliveryTime));
-        break;
-      default:
-        break;
-    }
-    return list.toList();
+    final start = page * catalogPageSize;
+    return _foodItems.skip(start).take(catalogPageSize).toList();
   }
 
   List<FoodItem> searchFood(String query) {
@@ -145,6 +127,15 @@ class MockDataService {
             element.category.toLowerCase().contains(lower))
         .toList();
   }
+
+  List<FoodItem> itemsByIds(Iterable<String> ids) {
+    final lookup = ids.toSet();
+    final list = _foodItems.where((item) => lookup.contains(item.id)).toList();
+    list.sort((a, b) => a.name.compareTo(b.name));
+    return list;
+  }
+
+  List<FoodItem> get allFoodItems => _foodItems;
 
   List<Order> get mockOrders => List.generate(
         6,

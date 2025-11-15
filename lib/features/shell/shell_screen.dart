@@ -4,11 +4,11 @@ import 'package:iconly/iconly.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/services/notifiers.dart';
-import '../../core/widgets/empty_state.dart';
 import '../cart/cart_screen.dart';
 import '../catalog/catalog_screen.dart';
 import '../comparison/comparison_screen.dart';
 import '../favorites/favorites_screen.dart';
+import '../chat/chat_screen.dart';
 import '../help/help_center_screen.dart';
 import '../home/home_screen.dart';
 import '../orders/orders_screen.dart';
@@ -51,7 +51,7 @@ class _ShellScreenState extends State<ShellScreen> with SingleTickerProviderStat
       HomeScreen(state: widget.state),
       RestaurantsScreen(state: widget.state),
       CartScreen(state: widget.state),
-      const _ChatPlaceholder(),
+      ChatScreen(state: widget.state),
     ];
 
     return ValueListenableBuilder<bool>(
@@ -297,6 +297,7 @@ class _AppDrawer extends StatelessWidget {
                   _DrawerTile(label: loc.translate('comparison'), icon: IconlyBold.chart, onTap: () => Navigator.of(context).pushNamed(ComparisonScreen.route)),
                   _DrawerTile(label: loc.translate('orders'), icon: IconlyLight.document, onTap: () => Navigator.of(context).pushNamed(OrdersScreen.route)),
                   _DrawerTile(label: loc.translate('favorites'), icon: IconlyBold.heart, onTap: () => Navigator.of(context).pushNamed(FavoritesScreen.route)),
+                  _DrawerTile(label: loc.translate('chat'), icon: IconlyLight.message, onTap: () => Navigator.of(context).pushNamed(ChatScreen.route)),
                   _DrawerTile(label: loc.translate('profile'), icon: IconlyLight.profile, onTap: () => Navigator.of(context).pushNamed(ProfileScreen.route)),
                   _DrawerTile(label: loc.translate('settings'), icon: IconlyLight.setting, onTap: () => Navigator.of(context).pushNamed(SettingsScreen.route)),
                   _DrawerTile(label: loc.translate('help_center'), icon: IconlyLight.info_square, onTap: () => Navigator.of(context).pushNamed(HelpCenterScreen.route)),
@@ -331,16 +332,3 @@ class _DrawerTile extends StatelessWidget {
   }
 }
 
-class _ChatPlaceholder extends StatelessWidget {
-  const _ChatPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: EmptyState(
-        title: 'Chat coming soon',
-        subtitle: 'We are preparing AI assistants to help you track meals.',
-      ),
-    );
-  }
-}

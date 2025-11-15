@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/services/notifiers.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/skeleton_loader.dart';
 import 'track_order_screen.dart';
 
@@ -18,21 +20,29 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final notifier = widget.state.ordersNotifier;
+    final loc = AppLocalizations.of(context);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Orders'),
-          bottom: const TabBar(tabs: [Tab(text: 'Current'), Tab(text: 'History')]),
+          title: Text(loc.translate('orders')),
+          bottom: TabBar(
+            tabs: [
+              Tab(text: loc.translate('current')),
+              Tab(text: loc.translate('history')),
+            ],
+          ),
         ),
         body: TabBarView(
           children: [
             _OrdersList(
+              notifier: notifier,
               ordersListenable: notifier.currentOrders,
               onRefresh: notifier.refresh,
               showTrack: true,
             ),
             _OrdersList(
+              notifier: notifier,
               ordersListenable: notifier.historyOrders,
               onRefresh: notifier.refresh,
               showTrack: false,
@@ -46,30 +56,45 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
 
 class _OrdersList extends StatelessWidget {
   const _OrdersList({
+    required this.notifier,
     required this.ordersListenable,
     required this.onRefresh,
     required this.showTrack,
   });
 
+  final OrdersNotifier notifier;
   final ValueNotifier<List<Order>> ordersListenable;
   final Future<void> Function() onRefresh;
   final bool showTrack;
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ValueListenableBuilder<List<Order>>(
         valueListenable: ordersListenable,
         builder: (context, orders, _) {
           if (orders.isEmpty) {
-            return ListView.builder(
+            if (notifier.isLoading) {
+              return ListView.builder(
+                padding: const EdgeInsets.all(24),
+                itemCount: 4,
+                itemBuilder: (_, __) => const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: SkeletonLoader(height: 120, borderRadius: 24),
+                ),
+              );
+            }
+            return ListView(
               padding: const EdgeInsets.all(24),
-              itemCount: 4,
-              itemBuilder: (_, __) => const Padding(
-                padding: EdgeInsets.only(bottom: 16),
-                child: SkeletonLoader(height: 120, borderRadius: 24),
-              ),
+              children: [
+                EmptyState(
+                  title: loc.translate('empty_state'),
+                  subtitle: loc.translate('empty_orders_message'),
+                ),
+              ],
             );
           }
           return ListView.separated(
@@ -82,7 +107,7 @@ class _OrdersList extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
-                  color: Theme.of(context).cardColor,
+                  color: theme.cardColor,
                   boxShadow: [
                     BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 6)),
                   ],
@@ -93,21 +118,21 @@ class _OrdersList extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(order.id, style: Theme.of(context).textTheme.titleMedium),
+                        Text(order.id, style: theme.textTheme.titleMedium),
                         Chip(label: Text(order.status)),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(order.date.toLocal().toString().split(' ').first),
+                    Text(order.date.toLocal().toString().split(' ').first, style: theme.textTheme.bodySmall),
                     const SizedBox(height: 8),
-                    Text('Total ${order.total.toStringAsFixed(2)} USD'),
+                    Text('${loc.translate('total')}: ${order.total.toStringAsFixed(2)} USD'),
                     if (showTrack) ...[
                       const SizedBox(height: 12),
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () => Navigator.of(context).pushNamed(TrackOrderScreen.route, arguments: order),
-                          child: const Text('Track'),
+                          child: Text(loc.translate('track')),
                         ),
                       )
                     ]
