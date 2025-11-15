@@ -142,6 +142,30 @@ class GiftCard {
   final List<String> perkKeys;
 }
 
+class SubscriptionPlan {
+  const SubscriptionPlan({
+    required this.id,
+    required this.titleKey,
+    required this.descriptionKey,
+    required this.imageUrl,
+    required this.pricePerWeek,
+    required this.durationWeeks,
+    required this.tagKey,
+    required this.perkKeys,
+    this.highlightKey,
+  });
+
+  final String id;
+  final String titleKey;
+  final String descriptionKey;
+  final String imageUrl;
+  final double pricePerWeek;
+  final int durationWeeks;
+  final String tagKey;
+  final List<String> perkKeys;
+  final String? highlightKey;
+}
+
 class AppNotification {
   const AppNotification({
     required this.id,
@@ -565,17 +589,21 @@ class MockDataService {
         perkKeys: const ['gift_perk_scheduled_send', 'gift_perk_premium_support'],
       ),
     ];
+
+    _subscriptions = _subscriptionPlans;
   }
 
   static const int popularPageSize = 6;
   static const int catalogPageSize = 8;
   static const int notificationsPageSize = 4;
   static const int giftCardPageSize = 3;
+  static const int subscriptionPageSize = 4;
 
   late final List<Restaurant> _restaurants;
   late final List<ReservationSlot> _reservationSlots;
   late final List<Reservation> _reservations;
   late final List<GiftCard> _giftCards;
+  late final List<SubscriptionPlan> _subscriptions;
 
   final List<Category> mockCategories = [
     const Category(
@@ -619,6 +647,8 @@ class MockDataService {
 
   List<GiftCard> get giftCards => List.unmodifiable(_giftCards);
 
+  List<SubscriptionPlan> get subscriptionPlans => List.unmodifiable(_subscriptions);
+
   List<String> get giftOccasionKeys => const [
         'gift_occasion_thankyou',
         'gift_occasion_birthday',
@@ -636,6 +666,23 @@ class MockDataService {
         'gift_perk_premium_support',
         'gift_perk_bulk_upload',
       ];
+
+  List<String> get subscriptionTagKeys => const [
+        'subscription_tag_flex',
+        'subscription_tag_wellness',
+        'subscription_tag_family',
+        'subscription_tag_corporate',
+      ];
+
+  List<String> get subscriptionPerkKeys => const [
+        'subscriptions_perk_free_setup',
+        'subscriptions_perk_weekly_consult',
+        'subscriptions_perk_family_portions',
+        'subscriptions_perk_priority_support',
+        'subscriptions_perk_surprise',
+      ];
+
+  List<int> get subscriptionDurations => const [4, 8, 12];
 
   List<FoodItem> searchFood(String query) {
     final lower = query.toLowerCase();
@@ -866,6 +913,65 @@ final List<LoyaltyReward> _profileRewards = [
     description: 'Schedule a live session with our culinary concierge.',
     pointsRequired: 900,
     iconUrl: 'https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=200&q=80',
+  ),
+];
+
+final List<SubscriptionPlan> _subscriptionPlans = [
+  const SubscriptionPlan(
+    id: 'subscription_1',
+    titleKey: 'subscription_plan_title_express',
+    descriptionKey: 'subscription_plan_desc_express',
+    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80',
+    pricePerWeek: 59,
+    durationWeeks: 4,
+    tagKey: 'subscription_tag_flex',
+    perkKeys: [
+      'subscriptions_perk_free_setup',
+      'subscriptions_perk_weekly_consult',
+      'subscriptions_perk_surprise',
+    ],
+    highlightKey: 'subscriptions_badge_new',
+  ),
+  const SubscriptionPlan(
+    id: 'subscription_2',
+    titleKey: 'subscription_plan_title_wellness',
+    descriptionKey: 'subscription_plan_desc_wellness',
+    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80&sat=-20',
+    pricePerWeek: 72,
+    durationWeeks: 8,
+    tagKey: 'subscription_tag_wellness',
+    perkKeys: [
+      'subscriptions_perk_weekly_consult',
+      'subscriptions_perk_priority_support',
+    ],
+  ),
+  const SubscriptionPlan(
+    id: 'subscription_3',
+    titleKey: 'subscription_plan_title_family',
+    descriptionKey: 'subscription_plan_desc_family',
+    imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80',
+    pricePerWeek: 89,
+    durationWeeks: 12,
+    tagKey: 'subscription_tag_family',
+    perkKeys: [
+      'subscriptions_perk_family_portions',
+      'subscriptions_perk_free_setup',
+      'subscriptions_perk_surprise',
+    ],
+    highlightKey: 'subscriptions_badge_best_value',
+  ),
+  const SubscriptionPlan(
+    id: 'subscription_4',
+    titleKey: 'subscription_plan_title_corporate',
+    descriptionKey: 'subscription_plan_desc_corporate',
+    imageUrl: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=900&q=80',
+    pricePerWeek: 105,
+    durationWeeks: 8,
+    tagKey: 'subscription_tag_corporate',
+    perkKeys: [
+      'subscriptions_perk_priority_support',
+      'subscriptions_perk_free_setup',
+    ],
   ),
 ];
 

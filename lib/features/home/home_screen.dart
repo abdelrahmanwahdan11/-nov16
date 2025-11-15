@@ -18,6 +18,7 @@ import '../notifications/notifications_screen.dart';
 import '../reservations/reservations_screen.dart';
 import '../reservations/reservation_sheet.dart';
 import '../gift_cards/gift_cards_screen.dart';
+import '../subscriptions/subscriptions_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.state});
@@ -222,6 +223,53 @@ class _HomeScreenState extends State<HomeScreen> {
                                 preselected: highlightedRestaurant,
                               ),
                             ),
+                          const SizedBox(height: 24),
+                        ],
+                      );
+                    },
+                  ),
+                  AnimatedBuilder(
+                    animation: Listenable.merge([
+                      widget.state.subscriptionsNotifier,
+                      widget.state.subscriptionsNotifier.plans,
+                      widget.state.subscriptionsNotifier.isLoading,
+                    ]),
+                    builder: (context, _) {
+                      final subscriptionNotifier = widget.state.subscriptionsNotifier;
+                      final plans = subscriptionNotifier.plans.value;
+                      if (subscriptionNotifier.isLoading.value && plans.isEmpty) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(
+                              title: loc.translate('subscriptions'),
+                              actionLabel: loc.translate('view_all'),
+                              onActionPressed: () => Navigator.of(context).pushNamed(SubscriptionsScreen.route),
+                            ),
+                            const SizedBox(height: 12),
+                            const SkeletonLoader(height: 160, borderRadius: 28),
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }
+                      if (plans.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      final featured = plans.first;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(
+                            title: loc.translate('subscriptions'),
+                            actionLabel: loc.translate('view_all'),
+                            onActionPressed: () => Navigator.of(context).pushNamed(SubscriptionsScreen.route),
+                          ),
+                          const SizedBox(height: 12),
+                          _SubscriptionHomeCard(
+                            plan: featured,
+                            loc: loc,
+                            onTap: () => Navigator.of(context).pushNamed(SubscriptionsScreen.route),
+                          ),
                           const SizedBox(height: 24),
                         ],
                       );
@@ -1004,6 +1052,150 @@ class _CommunityPreviewCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SubscriptionHomeCard extends StatelessWidget {
+  const _SubscriptionHomeCard({required this.plan, required this.loc, required this.onTap});
+
+  final SubscriptionPlan plan;
+  final AppLocalizations loc;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final currency = loc.translate('currency_symbol_prefix');
+    final durationLabel =
+        loc.translate('subscriptions_duration_weeks').replaceFirst('%d', plan.durationWeeks.toString());
+    final priceLabel = loc
+        .translate('subscriptions_price_per_week')
+        .replaceFirst('%s', '$currency${plan.pricePerWeek.toStringAsFixed(0)}');
+    final highlight = plan.highlightKey != null ? loc.translate(plan.highlightKey!) : null;
+
+    return Hero(
+      tag: 'subscription-${plan.id}',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(28),
+          child: Ink(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.12),
+                  theme.colorScheme.primary.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: AspectRatio(
+                    aspectRatio: 3 / 2,
+                    child: Image.network(
+                      plan.imageUrl,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (highlight != null) ...[
+                  Align(
+                    alignment: AlignmentDirectional.topStart,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Text(
+                        highlight,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                Text(
+                  loc.translate(plan.titleKey),
+                  style: theme.textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  loc.translate(plan.descriptionKey),
+                  style: theme.textTheme.bodyMedium,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: plan.perkKeys
+                      .take(3)
+                      .map(
+                        (perk) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.shadowColor.withOpacity(0.04),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            loc.translate(perk),
+                            style: theme.textTheme.labelMedium,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          priceLabel,
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          durationLabel,
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.secondary),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

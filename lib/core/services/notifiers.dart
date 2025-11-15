@@ -25,6 +25,7 @@ class AppState extends ChangeNotifier {
     notificationsNotifier = NotificationsNotifier(mock);
     reservationsNotifier = ReservationsNotifier(mock);
     giftCardsNotifier = GiftCardsNotifier(mock);
+    subscriptionsNotifier = SubscriptionsNotifier(mock);
   }
 
   late final MockDataService mockDataService;
@@ -43,6 +44,7 @@ class AppState extends ChangeNotifier {
   late final NotificationsNotifier notificationsNotifier;
   late final ReservationsNotifier reservationsNotifier;
   late final GiftCardsNotifier giftCardsNotifier;
+  late final SubscriptionsNotifier subscriptionsNotifier;
 
   final SharedPrefsService prefs = SharedPrefsService();
 
@@ -59,6 +61,7 @@ class AppState extends ChangeNotifier {
     unawaited(notificationsNotifier.loadInitial());
     unawaited(reservationsNotifier.loadInitial());
     unawaited(giftCardsNotifier.loadInitial());
+    unawaited(subscriptionsNotifier.loadInitial());
   }
 
   @override
@@ -78,6 +81,7 @@ class AppState extends ChangeNotifier {
     notificationsNotifier.dispose();
     reservationsNotifier.dispose();
     giftCardsNotifier.dispose();
+    subscriptionsNotifier.dispose();
     super.dispose();
   }
 }
@@ -942,6 +946,148 @@ class GiftCardsNotifier extends ChangeNotifier {
     isLoading.dispose();
     loadingMore.dispose();
     selectedOccasion.dispose();
+    selectedPerks.dispose();
+    super.dispose();
+  }
+}
+
+class SubscriptionsNotifier extends ChangeNotifier {
+  SubscriptionsNotifier(this._dataService);
+
+  final MockDataService _dataService;
+
+  final ValueNotifier<List<SubscriptionPlan>> plans = ValueNotifier([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<bool> loadingMore = ValueNotifier(false);
+  final ValueNotifier<String?> selectedTag = ValueNotifier(null);
+  final ValueNotifier<int?> selectedDuration = ValueNotifier(null);
+  final ValueNotifier<Set<String>> selectedPerks = ValueNotifier(<String>{});
+
+  List<SubscriptionPlan> _all = [];
+  List<SubscriptionPlan> _filtered = [];
+  int _page = 0;
+  bool _hasMore = true;
+  bool _initialized = false;
+
+  bool get hasMore => _hasMore;
+
+  Future<void> loadInitial({bool force = false}) async {
+    if (isLoading.value) return;
+    if (_initialized && !force) return;
+    isLoading.value = true;
+    _hasMore = true;
+    _page = 0;
+    plans.value = [];
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 420));
+    _all = List<SubscriptionPlan>.from(_dataService.subscriptionPlans);
+    _applyFilters();
+    isLoading.value = false;
+    _initialized = true;
+    notifyListeners();
+  }
+
+  Future<void> refresh() => loadInitial(force: true);
+
+  Future<void> loadMore() async {
+    if (!_hasMore || loadingMore.value || isLoading.value) return;
+    loadingMore.value = true;
+    await Future.delayed(const Duration(milliseconds: 360));
+    final nextPage = _page + 1;
+    final start = nextPage * MockDataService.subscriptionPageSize;
+    final nextBatch =
+        _filtered.skip(start).take(MockDataService.subscriptionPageSize).toList();
+    if (nextBatch.isEmpty) {
+      _hasMore = false;
+    } else {
+      plans.value = [...plans.value, ...nextBatch];
+      _page = nextPage;
+      _hasMore = plans.value.length < _filtered.length;
+    }
+    loadingMore.value = false;
+    notifyListeners();
+  }
+
+  void selectTag(String? key) {
+    final current = selectedTag.value;
+    selectedTag.value = current == key ? null : key;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void selectDuration(int? weeks) {
+    selectedDuration.value = weeks;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void togglePerk(String key) {
+    final current = {...selectedPerks.value};
+    if (current.contains(key)) {
+      current.remove(key);
+    } else {
+      current.add(key);
+    }
+    selectedPerks.value = current;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void clearPerks() {
+    if (selectedPerks.value.isEmpty) return;
+    selectedPerks.value = <String>{};
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void clearDuration() {
+    if (selectedDuration.value == null) return;
+    selectedDuration.value = null;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void resetAll() {
+    selectedTag.value = null;
+    selectedDuration.value = null;
+    selectedPerks.value = <String>{};
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void _applyFilters() {
+    Iterable<SubscriptionPlan> filtered = _all;
+    final tag = selectedTag.value;
+    final duration = selectedDuration.value;
+    final perks = selectedPerks.value;
+    if (tag != null) {
+      filtered = filtered.where((plan) => plan.tagKey == tag);
+    }
+    if (duration != null) {
+      filtered = filtered.where((plan) => plan.durationWeeks >= duration);
+    }
+    if (perks.isNotEmpty) {
+      filtered = filtered.where((plan) {
+        return perks.every((perk) => plan.perkKeys.contains(perk));
+      });
+    }
+    final sorted = filtered.toList()
+      ..sort((a, b) => a.pricePerWeek.compareTo(b.pricePerWeek));
+    _filtered = sorted;
+    _page = 0;
+    final initial =
+        _filtered.take(MockDataService.subscriptionPageSize).toList();
+    plans.value = initial;
+    _hasMore = _filtered.length > initial.length;
+  }
+
+  @override
+  void dispose() {
+    plans.dispose();
+    isLoading.dispose();
+    loadingMore.dispose();
+    selectedTag.dispose();
+    selectedDuration.dispose();
     selectedPerks.dispose();
     super.dispose();
   }

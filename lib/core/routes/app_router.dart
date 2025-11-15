@@ -29,6 +29,7 @@ import '../../features/shell/shell_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
 import '../../features/reservations/reservations_screen.dart';
 import '../../features/gift_cards/gift_cards_screen.dart';
+import '../../features/subscriptions/subscriptions_screen.dart';
 import '../services/mock_data_service.dart';
 import '../services/notifiers.dart';
 
@@ -97,6 +98,8 @@ class AppRouter {
           return MealPlannerScreen(state: state);
         case GiftCardsScreen.route:
           return GiftCardsScreen(state: state);
+        case SubscriptionsScreen.route:
+          return SubscriptionsScreen(state: state);
         default:
           return const OnboardingScreen();
       }
