@@ -22,19 +22,25 @@ class FoodDeliveryApp extends StatefulWidget {
 }
 
 class _FoodDeliveryAppState extends State<FoodDeliveryApp> {
-  late final AppRouter _router;
+  AppRouter? _router;
+  bool _didBootstrap = false;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     final state = AppStateScope.of(context, listen: false);
-    _router = AppRouter(state: state);
-    state.bootstrap();
+    _router ??= AppRouter(state: state);
+    if (!_didBootstrap) {
+      _didBootstrap = true;
+      state.bootstrap();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = AppStateScope.of(context);
+    final router = _router ?? AppRouter(state: state);
+    _router ??= router;
     return AnimatedBuilder(
       animation: state.themeNotifier,
       builder: (context, _) {
@@ -81,8 +87,8 @@ class _FoodDeliveryAppState extends State<FoodDeliveryApp> {
                   ),
                 );
               },
-              onGenerateRoute: _router.onGenerateRoute,
-              navigatorKey: _router.navigatorKey,
+              onGenerateRoute: router.onGenerateRoute,
+              navigatorKey: router.navigatorKey,
             );
           },
         );

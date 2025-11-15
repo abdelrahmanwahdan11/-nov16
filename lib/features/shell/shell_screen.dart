@@ -38,7 +38,7 @@ class ShellScreen extends StatefulWidget {
   State<ShellScreen> createState() => _ShellScreenState();
 }
 
-class _ShellScreenState extends State<ShellScreen> with SingleTickerProviderStateMixin {
+class _ShellScreenState extends State<ShellScreen> {
   final ValueNotifier<int> _currentIndex = ValueNotifier(0);
   final ValueNotifier<bool> _drawerOpen = ValueNotifier(false);
 
@@ -48,6 +48,14 @@ class _ShellScreenState extends State<ShellScreen> with SingleTickerProviderStat
   void initState() {
     super.initState();
     _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _currentIndex.dispose();
+    _drawerOpen.dispose();
+    super.dispose();
   }
 
   void _onItemTapped(int index) {
